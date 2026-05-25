@@ -1,8 +1,6 @@
 const patternGrid = document.getElementById('patternGrid');
 const patternCanvas = document.getElementById('patternCanvas');
 const patternFrame = document.querySelector('.pattern-frame');
-const statusText = document.getElementById('statusText');
-const clearButton = document.getElementById('clearButton');
 const messageCard = document.getElementById('messageCard');
 const lockCard = document.querySelector('.lock-card');
 
@@ -11,11 +9,6 @@ let currentPattern = [];
 let isDrawing = false;
 let pointerPos = null;
 const ctx = patternCanvas.getContext('2d');
-
-function setStatus(message, isError = false) {
-  statusText.textContent = message;
-  statusText.style.color = isError ? '#ff7a8a' : '#b5b6c3';
-}
 
 function resizeCanvas() {
   const rect = patternFrame.getBoundingClientRect();
@@ -75,7 +68,6 @@ function addDot(dot) {
   if (!value || currentPattern.includes(value)) return;
   currentPattern.push(value);
   dot.classList.add('active');
-  setStatus(`Pola: ${currentPattern.length} dari 4 titik.`);
   drawPattern();
 }
 
@@ -106,7 +98,6 @@ function handlePatternEnd() {
   }
 
   if (currentPattern.length !== correctPattern.length) {
-    setStatus('Pola tidak lengkap. Tarik ulang.', true);
     resetPattern();
     return;
   }
@@ -116,7 +107,6 @@ function handlePatternEnd() {
     lockCard.classList.add('hidden');
     messageCard.classList.remove('hidden');
   } else {
-    setStatus('Pola salah. Tarik ulang.', true);
     resetPattern();
   }
 }
@@ -151,11 +141,6 @@ window.addEventListener('pointercancel', () => {
   resetPattern();
 });
 
-clearButton.addEventListener('click', () => {
-  resetPattern();
-  setStatus('Tarik pola yang benar.');
-});
-
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
-setStatus('Tarik pola melalui titik yang benar.');
+
