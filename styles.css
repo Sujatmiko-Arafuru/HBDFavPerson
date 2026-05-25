@@ -438,8 +438,8 @@ body:has(.container.is-message-complete) {
   }
 }
 
-/* Portrait: paragraf atas, foto bawah */
-@media (orientation: portrait) {
+/* Android / mobile: portrait — paragraf atas, foto bawah */
+@media (max-width: 768px) and (orientation: portrait) {
   .message-complete {
     flex-direction: column;
     align-items: stretch;
@@ -460,8 +460,12 @@ body:has(.container.is-message-complete) {
   }
 }
 
-/* Landscape: paragraf kiri, foto kanan */
-@media (orientation: landscape) {
+/* Android / mobile: landscape — paragraf kiri, foto kanan */
+@media (max-width: 768px) and (orientation: landscape) {
+  body:has(.container.is-message-complete) {
+    overflow-y: auto;
+  }
+
   .message-complete {
     flex-direction: row;
     align-items: flex-start;
@@ -482,6 +486,8 @@ body:has(.container.is-message-complete) {
   }
 
   .container.is-message-complete {
+    min-height: 100dvh;
+    height: auto;
     padding-left: max(20px, env(safe-area-inset-left, 0px));
     padding-right: max(20px, env(safe-area-inset-right, 0px));
     padding-top: max(12px, env(safe-area-inset-top, 0px));
@@ -493,14 +499,66 @@ body:has(.container.is-message-complete) {
   }
 }
 
-@media (max-width: 768px) and (orientation: landscape) {
+/* Desktop / web: tata letak rapi, paragraf kiri & foto kanan, vertikal di tengah */
+@media (min-width: 769px) {
   body:has(.container.is-message-complete) {
+    overflow-x: hidden;
     overflow-y: auto;
   }
 
-  .container.is-message-complete {
+  .page:has(.container.is-message-complete) {
+    min-height: 100vh;
     min-height: 100dvh;
+  }
+
+  .container.is-unlocked.is-message-complete {
+    justify-content: center;
+    align-items: center;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(32px, 5vh, 64px) clamp(40px, 5vw, 72px);
+  }
+
+  .typewriter-panel.is-complete {
+    flex: 0 1 auto;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .message-complete {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(40px, 4vw, 72px);
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+
+  .message-paragraph {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 36rem;
+    font-size: clamp(1.2rem, 1.15vw, 1.45rem);
+    line-height: 1.82;
+    text-align: justify;
+    text-justify: inter-word;
+  }
+
+  .message-photo {
+    flex: 0 0 auto;
+    width: 260px;
+    max-width: 260px;
+    margin: 0;
+  }
+
+  .message-photo img {
+    max-height: min(68vh, 460px);
+    width: 100%;
     height: auto;
+    object-fit: contain;
   }
 }
 
