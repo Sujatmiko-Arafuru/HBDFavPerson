@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selamat Ulang Tahun</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <video class="bg-video" autoplay muted loop playsinline>
+      <source src="video.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+
+    <div class="overlay"></div>
+
+    <main class="container">
+      <section class="card lock-card">
+        <div class="card-header">
+          <p class="hint">Tarik pola melalui titik yang benar.</p>
+          <h1>Kunci Pola</h1>
+        </div>
+
+        <div class="pattern-frame">
+          <canvas id="patternCanvas" class="pattern-canvas" aria-hidden="true"></canvas>
+          <div class="pattern-grid" id="patternGrid">
+            <button class="dot" data-value="1" aria-label="Titik 1"></button>
+            <button class="dot" data-value="2" aria-label="Titik 2"></button>
+            <button class="dot" data-value="3" aria-label="Titik 3"></button>
+            <button class="dot" data-value="4" aria-label="Titik 4"></button>
+            <button class="dot" data-value="5" aria-label="Titik 5"></button>
+            <button class="dot" data-value="6" aria-label="Titik 6"></button>
+            <button class="dot" data-value="7" aria-label="Titik 7"></button>
+            <button class="dot" data-value="8" aria-label="Titik 8"></button>
+            <button class="dot" data-value="9" aria-label="Titik 9"></button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="clearButton" class="button secondary">Reset</button>
+        </div>
+
+        <p class="status" id="statusText">Tarik pola ke titik yang benar.</p>
+      </section>
+
+      <section class="card message-card hidden" id="messageCard">
+        <h2>Selamat Ulang Tahun!</h2>
+        <p>Semoga semua harimu penuh cinta dan kebahagiaan.</p>
+        <p>Ini khusus untukmu, dari seseorang yang selalu ingin melihatmu tersenyum.</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
