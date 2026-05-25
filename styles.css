@@ -313,18 +313,24 @@ body {
 
 .message-card h2 {
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff 10%, #ffd700 50%, #ff9966 90%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffe566;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 0 28px rgba(255, 204, 51, 0.35);
   margin-bottom: 20px;
+}
+
+.message-card h2 span {
+  color: inherit;
 }
 
 .message-card p {
   font-size: 1.05rem;
   font-weight: 400;
-  opacity: 0.9;
   margin-bottom: 16px;
   line-height: 1.8;
-  color: #e0e1eb;
+  color: #f4f4f9;
+}
+
+.message-card p span {
+  color: inherit;
 }
 
