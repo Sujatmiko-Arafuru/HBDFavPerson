@@ -3,15 +3,27 @@ const patternCanvas = document.getElementById('patternCanvas');
 const patternFrame = document.querySelector('.pattern-frame');
 const mainContainer = document.getElementById('mainContainer');
 const typewriterPanel = document.getElementById('typewriterPanel');
+const typewriterStage = document.getElementById('typewriterStage');
 const typewriterText = document.getElementById('typewriterText');
+const messageComplete = document.getElementById('messageComplete');
+const messageParagraph = document.getElementById('messageParagraph');
 const lockCard = document.querySelector('.lock-card');
+const bgVideo = document.querySelector('.bg-video');
 
 const TYPEWRITER_SENTENCES = [
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-  'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-  'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
-  'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+  'Kalau pesan ini sampai ke kamu makasih ya buat siapapun yang nerusin!',
+  'Hallo Oin ^_^, lama ngga ketemu...',
+  'Selamat ulang tahun yaa Oin. Udah 21 nihhh wkwkwkwk. Tapi bentar jangan tutup dulu...',
+  'Dari kecil sampai kuliah, kita pernah jalan bareng di satu cerita sek panjang walaupun endingnya ytta wkwkwkw',
+  'Kesalahan semuanya memang di aku, aku juga menyesal dan berproses untuk kembali ke Tuhan yang tentunya bakal duowo perjalanan e.',
+  'Aku merupakan domba hilang tapi aku juga bakal ngngatin domba hilang lainya, kalau Yesus itu gembala yang setia.',
+  '"Seperti pelangi setelah hujan, kiranya hidupmu penuh warna kasih dan pengharapan."',
+  'Aku selalu di ingatin Pastorku kalau kasih Kristus itu lebih besar dari segala luka, dan Ia akan selalu menjagamu.',
+  'Happy Birthday, my first and my last love ^^',
+  'Btw aku juga ada diary di X sek cmn kamu yang bisa liat kalau mau... walaupun aku ragu wkwkw... HBD!!!!!',
 ];
+
+const dots = [...patternGrid.querySelectorAll('.dot')];
 
 let typewriterTimeline = null;
 let sentenceIndex = 0;
@@ -20,7 +32,15 @@ const correctPattern = ['1', '8', '5', '3'];
 let currentPattern = [];
 let isDrawing = false;
 let pointerPos = null;
-let patternState = 'drawing'; // 'drawing', 'success', 'error'
+let activePointerId = null;
+let patternState = 'drawing';
+let isUnlocked = false;
+let isAnimatingError = false;
+let dotCenters = {};
+let frameRectCache = null;
+let drawScheduled = false;
+let confettiTickerActive = false;
+
 const ctx = patternCanvas.getContext('2d');
 
 // --- Confetti System ---
@@ -39,11 +59,11 @@ class ConfettiParticle {
     this.x = x;
     this.y = y;
     this.size = gsap.utils.random(8, 14);
-    const angle = gsap.utils.random(-Math.PI * 0.15, -Math.PI * 0.85); // shoot upwards
+    const angle = gsap.utils.random(-Math.PI * 0.15, -Math.PI * 0.85);
     const speed = gsap.utils.random(10, 24);
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
-    
+
     this.gravity = 0.35;
     this.friction = 0.97;
     this.color = gsap.utils.random(confettiColors);
@@ -76,7 +96,7 @@ class ConfettiParticle {
       confettiCtx.fill();
     } else if (this.shape === 'square') {
       confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-    } else { // triangle
+    } else {
       confettiCtx.moveTo(0, -this.size / 2);
       confettiCtx.lineTo(this.size / 2, this.size / 2);
       confettiCtx.lineTo(-this.size / 2, this.size / 2);
@@ -87,7 +107,20 @@ class ConfettiParticle {
   }
 }
 
+function startConfettiLoop() {
+  if (confettiTickerActive) return;
+  confettiTickerActive = true;
+  gsap.ticker.add(updateConfetti);
+}
+
+function stopConfettiLoop() {
+  if (!confettiTickerActive) return;
+  confettiTickerActive = false;
+  gsap.ticker.remove(updateConfetti);
+}
+
 function spawnConfetti(x, y, count = 100) {
+  startConfettiLoop();
   for (let i = 0; i < count; i++) {
     confettiParticles.push(new ConfettiParticle(x, y));
   }
@@ -95,7 +128,7 @@ function spawnConfetti(x, y, count = 100) {
 
 function updateConfetti() {
   confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-  
+
   for (let i = confettiParticles.length - 1; i >= 0; i--) {
     const p = confettiParticles[i];
     p.update();
@@ -103,6 +136,10 @@ function updateConfetti() {
     if (p.opacity <= 0 || p.y > confettiCanvas.height) {
       confettiParticles.splice(i, 1);
     }
+  }
+
+  if (!confettiParticles.length) {
+    stopConfettiLoop();
   }
 }
 
@@ -114,14 +151,39 @@ function stopTypewriter() {
   }
 }
 
+function showCompleteMessage() {
+  stopTypewriter();
+  messageParagraph.textContent = TYPEWRITER_SENTENCES.join(' ');
+  typewriterPanel.classList.add('is-complete');
+  mainContainer.classList.add('is-message-complete');
+
+  const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+  tl.to(typewriterStage, {
+    opacity: 0,
+    duration: 0.8,
+    onComplete: () => {
+      typewriterStage.classList.add('hidden');
+    },
+  });
+  tl.set(messageComplete, { opacity: 0 });
+  tl.call(() => messageComplete.classList.remove('hidden'));
+  tl.to(messageComplete, { opacity: 1, duration: 1.1 }, '-=0.15');
+}
+
 function playTypewriterSentence() {
+  if (sentenceIndex >= TYPEWRITER_SENTENCES.length) {
+    showCompleteMessage();
+    return;
+  }
+
   const sentence = TYPEWRITER_SENTENCES[sentenceIndex];
-  sentenceIndex = (sentenceIndex + 1) % TYPEWRITER_SENTENCES.length;
+  sentenceIndex += 1;
 
   stopTypewriter();
   typewriterText.textContent = '';
 
   const typingProxy = { progress: 0 };
+  const isLastSentence = sentenceIndex >= TYPEWRITER_SENTENCES.length;
   typewriterTimeline = gsap.timeline({
     onComplete: () => {
       gsap.to(typewriterText, {
@@ -130,7 +192,11 @@ function playTypewriterSentence() {
         ease: 'power1.inOut',
         delay: 1.4,
         onComplete: () => {
-          gsap.delayedCall(0.9, playTypewriterSentence);
+          if (isLastSentence) {
+            showCompleteMessage();
+          } else {
+            gsap.delayedCall(0.9, playTypewriterSentence);
+          }
         },
       });
     },
@@ -158,8 +224,24 @@ function startTypewriter() {
 }
 
 // --- Pattern Canvas Core ---
+function cacheLayout() {
+  frameRectCache = patternFrame.getBoundingClientRect();
+  const hitRadius = Math.max(22, (frameRectCache.width / 3) * 0.28);
+  dotCenters = {};
+
+  dots.forEach((dot) => {
+    const dotRect = dot.getBoundingClientRect();
+    dotCenters[dot.dataset.value] = {
+      x: dotRect.left + dotRect.width / 2 - frameRectCache.left,
+      y: dotRect.top + dotRect.height / 2 - frameRectCache.top,
+      hitRadius,
+    };
+  });
+}
+
 function resizeCanvas() {
-  const rect = patternFrame.getBoundingClientRect();
+  cacheLayout();
+  const rect = frameRectCache;
   patternCanvas.width = rect.width * window.devicePixelRatio;
   patternCanvas.height = rect.height * window.devicePixelRatio;
   patternCanvas.style.width = `${rect.width}px`;
@@ -168,17 +250,32 @@ function resizeCanvas() {
   drawPattern();
 }
 
-function getDotCenter(dot) {
-  const dotRect = dot.getBoundingClientRect();
-  const frameRect = patternFrame.getBoundingClientRect();
-  return {
-    x: dotRect.left + dotRect.width / 2 - frameRect.left,
-    y: dotRect.top + dotRect.height / 2 - frameRect.top,
-  };
+function getPointerCoords(event) {
+  return { x: event.clientX, y: event.clientY };
+}
+
+function getDotFromCoords(clientX, clientY) {
+  if (!frameRectCache) cacheLayout();
+  const localX = clientX - frameRectCache.left;
+  const localY = clientY - frameRectCache.top;
+
+  for (const dot of dots) {
+    const center = dotCenters[dot.dataset.value];
+    if (!center) continue;
+    const dx = localX - center.x;
+    const dy = localY - center.y;
+    const radius = center.hitRadius;
+    if (dx * dx + dy * dy <= radius * radius) {
+      return dot;
+    }
+  }
+  return null;
 }
 
 function drawPattern() {
-  ctx.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
+  const w = patternCanvas.width / window.devicePixelRatio;
+  const h = patternCanvas.height / window.devicePixelRatio;
+  ctx.clearRect(0, 0, w, h);
   if (!currentPattern.length) return;
 
   if (patternState === 'success') {
@@ -186,17 +283,16 @@ function drawPattern() {
   } else if (patternState === 'error') {
     ctx.strokeStyle = 'rgba(255, 95, 122, 0.95)';
   } else {
-    ctx.strokeStyle = 'rgba(38, 198, 218, 0.95)'; // Turquoise/Cyan active line
+    ctx.strokeStyle = 'rgba(38, 198, 218, 0.95)';
   }
   ctx.lineWidth = 5;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
 
-  const points = currentPattern.map((value) => {
-    const dot = document.querySelector(`.dot[data-value="${value}"]`);
-    return dot ? getDotCenter(dot) : null;
-  }).filter(Boolean);
+  const points = currentPattern
+    .map((value) => dotCenters[value])
+    .filter(Boolean);
 
   if (!points.length) return;
   ctx.moveTo(points[0].x, points[0].y);
@@ -209,14 +305,36 @@ function drawPattern() {
   ctx.stroke();
 }
 
+function schedulePatternRedraw() {
+  if (drawScheduled) return;
+  drawScheduled = true;
+  requestAnimationFrame(() => {
+    drawScheduled = false;
+    drawPattern();
+  });
+}
+
 function resetPattern() {
   currentPattern = [];
   isDrawing = false;
   pointerPos = null;
-  document.querySelectorAll('.dot').forEach((dot) => {
+  patternState = 'drawing';
+  dots.forEach((dot) => {
     dot.classList.remove('active', 'success', 'error');
   });
   drawPattern();
+}
+
+function releasePointerCapture(event) {
+  if (activePointerId === null) return;
+  try {
+    if (patternGrid.hasPointerCapture(activePointerId)) {
+      patternGrid.releasePointerCapture(activePointerId);
+    }
+  } catch (_) {
+    // pointer may already be released
+  }
+  activePointerId = null;
 }
 
 function addDot(dot) {
@@ -224,33 +342,29 @@ function addDot(dot) {
   if (!value || currentPattern.includes(value)) return;
   currentPattern.push(value);
   dot.classList.add('active');
-  drawPattern();
-}
-
-function getDotFromPointer(event) {
-  const point = event.type.startsWith('touch')
-    ? event.touches[0] || event.changedTouches[0]
-    : event;
-  const element = document.elementFromPoint(point.clientX, point.clientY);
-  return element ? element.closest('.dot') : null;
+  schedulePatternRedraw();
 }
 
 function updatePointerPosition(event) {
-  const point = event.type.startsWith('touch')
-    ? event.touches[0] || event.changedTouches[0]
-    : event;
-  const frameRect = patternFrame.getBoundingClientRect();
+  if (!frameRectCache) cacheLayout();
+  const { x, y } = getPointerCoords(event);
   pointerPos = {
-    x: point.clientX - frameRect.left,
-    y: point.clientY - frameRect.top,
+    x: x - frameRectCache.left,
+    y: y - frameRectCache.top,
   };
+}
+
+function endDrawing(event) {
+  if (!isDrawing) return;
+  releasePointerCapture(event);
+  isDrawing = false;
+  pointerPos = null;
   drawPattern();
+  handlePatternEnd();
 }
 
 // --- Transitions ---
 function showMessageWithTransition() {
-  gsap.ticker.add(updateConfetti);
-
   spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.55, 130);
   setTimeout(() => {
     spawnConfetti(0, window.innerHeight, 70);
@@ -283,12 +397,13 @@ function showMessageWithTransition() {
 }
 
 function triggerPatternSuccess() {
+  isUnlocked = true;
   patternState = 'success';
   isDrawing = false;
   pointerPos = null;
   drawPattern();
 
-  document.querySelectorAll('.dot.active').forEach(dot => {
+  dots.filter((dot) => dot.classList.contains('active')).forEach((dot) => {
     dot.classList.add('success');
   });
 
@@ -297,36 +412,43 @@ function triggerPatternSuccess() {
     duration: 0.2,
     yoyo: true,
     repeat: 1,
-    ease: 'power1.inOut'
+    ease: 'power1.inOut',
   });
 
-  setTimeout(showMessageWithTransition, 500);
+  setTimeout(showMessageWithTransition, 400);
 }
 
 function triggerPatternError() {
+  if (isAnimatingError) return;
+  isAnimatingError = true;
   patternState = 'error';
   isDrawing = false;
   pointerPos = null;
   drawPattern();
 
-  document.querySelectorAll('.dot.active').forEach(dot => {
+  dots.filter((dot) => dot.classList.contains('active')).forEach((dot) => {
     dot.classList.add('error');
   });
 
-  gsap.fromTo(lockCard, 
-    { x: -8 }, 
-    { x: 8, duration: 0.08, repeat: 5, yoyo: true, onComplete: () => {
-      lockCard.style.transform = 'none';
-      resetPattern();
-    }}
+  gsap.fromTo(
+    lockCard,
+    { x: -8 },
+    {
+      x: 8,
+      duration: 0.08,
+      repeat: 5,
+      yoyo: true,
+      onComplete: () => {
+        lockCard.style.transform = 'none';
+        isAnimatingError = false;
+        resetPattern();
+      },
+    },
   );
 }
 
 function handlePatternEnd() {
-  if (!currentPattern.length) {
-    isDrawing = false;
-    return;
-  }
+  if (!currentPattern.length) return;
 
   if (currentPattern.length !== correctPattern.length) {
     triggerPatternError();
@@ -343,41 +465,91 @@ function handlePatternEnd() {
 
 // --- Event Listeners ---
 patternGrid.addEventListener('pointerdown', (event) => {
-  const dot = event.target.closest('.dot');
+  if (isUnlocked || isAnimatingError) return;
+
+  const { x, y } = getPointerCoords(event);
+  const dot = getDotFromCoords(x, y) || event.target.closest('.dot');
   if (!dot) return;
+
   event.preventDefault();
   patternState = 'drawing';
   resetPattern();
   isDrawing = true;
+  activePointerId = event.pointerId;
+
+  try {
+    patternGrid.setPointerCapture(event.pointerId);
+  } catch (_) {
+    // capture not supported; window listeners still work
+  }
+
   addDot(dot);
 });
 
-window.addEventListener('pointermove', (event) => {
-  if (!isDrawing) return;
+patternGrid.addEventListener('pointermove', (event) => {
+  if (!isDrawing || event.pointerId !== activePointerId) return;
+  event.preventDefault();
   updatePointerPosition(event);
-  const dot = getDotFromPointer(event);
+  const { x, y } = getPointerCoords(event);
+  const dot = getDotFromCoords(x, y);
   if (dot) addDot(dot);
+  schedulePatternRedraw();
 });
 
-window.addEventListener('pointerup', () => {
-  if (!isDrawing) return;
-  isDrawing = false;
-  pointerPos = null;
-  drawPattern();
-  handlePatternEnd();
+patternGrid.addEventListener('pointerup', (event) => {
+  if (!isDrawing || (activePointerId !== null && event.pointerId !== activePointerId)) return;
+  endDrawing(event);
 });
 
-window.addEventListener('pointercancel', () => {
-  if (!isDrawing) return;
+patternGrid.addEventListener('pointercancel', (event) => {
+  if (!isDrawing || (activePointerId !== null && event.pointerId !== activePointerId)) return;
+  releasePointerCapture(event);
   isDrawing = false;
   resetPattern();
 });
 
-window.addEventListener('resize', () => {
-  resizeCanvas();
-  resizeConfettiCanvas();
+window.addEventListener('pointerup', (event) => {
+  if (!isDrawing || activePointerId === null || event.pointerId !== activePointerId) return;
+  endDrawing(event);
 });
 
-// Init
-resizeCanvas();
-resizeConfettiCanvas();
+window.addEventListener('pointercancel', (event) => {
+  if (!isDrawing || activePointerId === null || event.pointerId !== activePointerId) return;
+  releasePointerCapture(event);
+  isDrawing = false;
+  resetPattern();
+});
+
+let resizeRaf = null;
+window.addEventListener('resize', () => {
+  if (resizeRaf) cancelAnimationFrame(resizeRaf);
+  resizeRaf = requestAnimationFrame(() => {
+    resizeRaf = null;
+    resizeCanvas();
+    resizeConfettiCanvas();
+  });
+});
+
+function initBackgroundVideo() {
+  if (!bgVideo) return;
+  const playVideo = () => {
+    bgVideo.play().catch(() => {});
+  };
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(playVideo, { timeout: 1500 });
+  } else {
+    setTimeout(playVideo, 300);
+  }
+}
+
+function init() {
+  resizeConfettiCanvas();
+  resizeCanvas();
+  initBackgroundVideo();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

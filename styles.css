@@ -34,6 +34,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
+  content-visibility: auto;
   object-fit: cover;
   object-position: center center;
   min-width: 100%;
@@ -97,6 +98,12 @@ body {
   pointer-events: none;
 }
 
+.typewriter-panel.is-complete {
+  flex: 1 1 auto;
+  max-width: min(1200px, 92vw);
+  width: 100%;
+}
+
 .typewriter-panel::before {
   content: '';
   display: block;
@@ -125,6 +132,57 @@ body {
 
 #typewriterText {
   font-style: normal;
+}
+
+.message-complete {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(28px, 4vw, 56px);
+  width: 100%;
+}
+
+.message-complete.hidden {
+  display: none;
+}
+
+.message-paragraph {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.15rem, 1.65vw, 1.65rem);
+  font-weight: 400;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  color: #f8f3ea;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+
+.message-photo {
+  flex: 0 0 auto;
+  margin: 0;
+  width: min(320px, 34vw);
+  max-width: 100%;
+}
+
+.message-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.container.is-message-complete {
+  justify-content: center;
+  align-items: center;
+  padding-left: clamp(32px, 8vw, 120px);
+  padding-right: clamp(32px, 8vw, 120px);
 }
 
 .typewriter-cursor {
@@ -163,6 +221,7 @@ body {
   --pattern-gap: 28px;
   --pattern-size: calc(3 * var(--pattern-cell) + 2 * var(--pattern-gap));
   position: relative;
+  touch-action: none;
   width: calc(var(--pattern-size) + 36px);
   height: calc(var(--pattern-size) + 36px);
   padding: 18px;
@@ -332,6 +391,25 @@ body {
 
   .typewriter-line {
     font-size: clamp(1.45rem, 5.5vw, 2rem);
+  }
+
+  .message-complete {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .message-paragraph {
+    font-size: clamp(1.1rem, 4.2vw, 1.45rem);
+    text-align: justify;
+  }
+
+  .message-photo {
+    width: min(280px, 72vw);
+  }
+
+  .container.is-message-complete {
+    padding-left: clamp(20px, 6vw, 40px);
+    padding-right: clamp(20px, 6vw, 40px);
   }
 
   .card {
