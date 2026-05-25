@@ -16,7 +16,7 @@ const TYPEWRITER_SENTENCES = [
   'Selamat ulang tahun yaa Oin. Udah 21 nihhh wkwkwkwk. Tapi bentar jangan tutup dulu...',
   'Dari kecil sampai kuliah, kita pernah jalan bareng di satu cerita sek panjang walaupun endingnya ytta wkwkwkw',
   'Kesalahan semuanya memang di aku, aku juga menyesal dan berproses untuk kembali ke Tuhan yang tentunya bakal duowo perjalanan e.',
-  'Aku merupakan domba hilang tapi aku juga bakal ngngatin domba hilang lainya, kalau Yesus itu gembala yang setia.',
+  'Aku merupakan domba hilang tapi aku juga bakal ngingatin domba hilang lainnya, kalau Yesus itu gembala yang setia.',
   '"Seperti pelangi setelah hujan, kiranya hidupmu penuh warna kasih dan pengharapan."',
   'Aku selalu di ingatin Pastorku kalau kasih Kristus itu lebih besar dari segala luka, dan Ia akan selalu menjagamu.',
   'Happy Birthday, my first and my last love ^^',

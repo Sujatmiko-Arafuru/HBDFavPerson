@@ -136,6 +136,7 @@ body {
 
 .message-complete {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
   gap: clamp(28px, 4vw, 56px);
   width: 100%;
@@ -178,11 +179,31 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.typewriter-panel.is-complete::before {
+  display: none;
+}
+
 .container.is-message-complete {
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto;
   padding-left: clamp(32px, 8vw, 120px);
   padding-right: clamp(32px, 8vw, 120px);
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(28px, env(safe-area-inset-bottom, 0px));
+}
+
+body:has(.container.is-message-complete) {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.page:has(.container.is-message-complete) {
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto;
 }
 
 .typewriter-cursor {
@@ -357,7 +378,7 @@ body {
     overflow: auto;
   }
 
-  body:has(.container.is-unlocked) {
+  body:has(.container.is-unlocked):not(:has(.container.is-message-complete)) {
     overflow: hidden;
   }
 
@@ -389,32 +410,97 @@ body {
     margin: auto 0;
   }
 
+  .typewriter-panel.is-complete {
+    flex: 1 1 auto;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
   .typewriter-line {
     font-size: clamp(1.45rem, 5.5vw, 2rem);
   }
 
-  .message-complete {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .message-paragraph {
-    font-size: clamp(1.1rem, 4.2vw, 1.45rem);
-    text-align: justify;
-  }
-
-  .message-photo {
-    width: min(280px, 72vw);
-  }
-
   .container.is-message-complete {
-    padding-left: clamp(20px, 6vw, 40px);
-    padding-right: clamp(20px, 6vw, 40px);
+    justify-content: flex-start;
+    align-items: stretch;
+    min-height: 100dvh;
+    height: auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
   }
 
   .card {
     width: min(92vw, 100%);
     padding: 22px;
+  }
+}
+
+/* Portrait: paragraf atas, foto bawah */
+@media (orientation: portrait) {
+  .message-complete {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .message-paragraph {
+    flex: 0 0 auto;
+    width: 100%;
+    font-size: clamp(1rem, 3.8vw, 1.35rem);
+    line-height: 1.7;
+  }
+
+  .message-photo {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: min(300px, 88vw);
+    margin: clamp(8px, 2vh, 20px) auto 0;
+  }
+}
+
+/* Landscape: paragraf kiri, foto kanan */
+@media (orientation: landscape) {
+  .message-complete {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .message-paragraph {
+    flex: 1 1 58%;
+    min-width: 0;
+    font-size: clamp(0.95rem, 2.2vh, 1.35rem);
+    line-height: 1.65;
+  }
+
+  .message-photo {
+    flex: 0 0 auto;
+    width: min(220px, 36vw);
+    max-width: 42%;
+    margin: 0;
+  }
+
+  .container.is-message-complete {
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .typewriter-panel.is-complete {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  body:has(.container.is-message-complete) {
+    overflow-y: auto;
+  }
+
+  .container.is-message-complete {
+    min-height: 100dvh;
+    height: auto;
   }
 }
 
