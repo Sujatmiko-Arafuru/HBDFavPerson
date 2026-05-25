@@ -259,15 +259,6 @@ body {
   z-index: 2;
 }
 
-/* Floating Elements (Hearts) */
-.floating-heart {
-  position: absolute;
-  pointer-events: none;
-  font-size: 24px;
-  z-index: 1;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
-}
-
 /* Enhanced Message Card styles */
 .message-icon {
   width: 90px;
@@ -309,23 +300,5 @@ body {
   margin-bottom: 16px;
   line-height: 1.8;
   color: #e0e1eb;
-}
-
-.message-footer {
-  margin-top: 32px;
-}
-
-#celebrateBtn {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 15px rgba(247, 183, 51, 0.3);
-}
-
-#celebrateBtn:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 6px 20px rgba(247, 183, 51, 0.5);
-}
-
-#celebrateBtn:active {
-  transform: translateY(1px) scale(0.98);
 }
 

@@ -94,72 +94,6 @@ function updateConfetti() {
   }
 }
 
-// --- Floating Hearts System ---
-const heartEmojis = ['❤️', '💖', '💕', '💝', '🌸', '✨', '🎈'];
-let heartInterval = null;
-
-function spawnFloatingHeart() {
-  const heart = document.createElement('div');
-  heart.className = 'floating-heart';
-  heart.textContent = gsap.utils.random(heartEmojis);
-  
-  const startX = gsap.utils.random(20, window.innerWidth - 40);
-  const startY = window.innerHeight + 50;
-  
-  heart.style.left = `${startX}px`;
-  heart.style.top = `${startY}px`;
-  
-  document.body.appendChild(heart);
-  
-  const duration = gsap.utils.random(5, 8);
-  const scale = gsap.utils.random(0.6, 1.4);
-  
-  gsap.timeline({
-    onComplete: () => heart.remove()
-  })
-    .to(heart, {
-      y: -(window.innerHeight + 150),
-      duration: duration,
-      ease: 'power1.out'
-    }, 0)
-    .to(heart, {
-      x: `+=${gsap.utils.random(-100, 100)}`,
-      rotation: gsap.utils.random(-120, 120),
-      scale: scale,
-      opacity: 0,
-      duration: duration,
-      ease: 'sine.inOut'
-    }, 0);
-}
-
-function startFloatingHearts() {
-  if (heartInterval) return;
-  heartInterval = setInterval(spawnFloatingHeart, 700);
-}
-
-function spawnFloatingHeartFromBtn(x, y) {
-  const heart = document.createElement('div');
-  heart.className = 'floating-heart';
-  heart.textContent = gsap.utils.random(['❤️', '💖', '💕', '💝']);
-  heart.style.left = `${x}px`;
-  heart.style.top = `${y}px`;
-  document.body.appendChild(heart);
-  
-  const duration = gsap.utils.random(2.5, 4.5);
-  const scale = gsap.utils.random(0.8, 1.8);
-  
-  gsap.timeline({ onComplete: () => heart.remove() })
-    .to(heart, {
-      y: `-=${gsap.utils.random(200, 450)}`,
-      x: `+=${gsap.utils.random(-180, 180)}`,
-      scale: scale,
-      rotation: gsap.utils.random(-180, 180),
-      opacity: 0,
-      duration: duration,
-      ease: 'power2.out'
-    });
-}
-
 // --- Text Reveal Logic ---
 function splitTextToSpans(element) {
   const text = element.textContent;
@@ -277,7 +211,6 @@ function showMessageWithTransition() {
 
   // Start confetti animation loops
   gsap.ticker.add(updateConfetti);
-  startFloatingHearts();
 
   // Confetti explosion from center of card
   spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.55, 130);
@@ -326,11 +259,6 @@ function showMessageWithTransition() {
     );
   });
 
-  tl.fromTo(messageCard.querySelector('.message-footer'),
-    { opacity: 0, y: 20 },
-    { opacity: 1, y: 0, duration: 0.5 },
-    "-=0.3"
-  );
 }
 
 function triggerPatternSuccess() {
@@ -432,27 +360,6 @@ window.addEventListener('resize', () => {
   resizeCanvas();
   resizeConfettiCanvas();
 });
-
-// Celebrate Button Interaction
-const celebrateBtn = document.getElementById('celebrateBtn');
-if (celebrateBtn) {
-  celebrateBtn.addEventListener('click', (e) => {
-    const rect = celebrateBtn.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    
-    spawnConfetti(x, y, 40);
-    
-    for (let i = 0; i < 5; i++) {
-      setTimeout(spawnFloatingHeartFromBtn, i * 100, x, y);
-    }
-    
-    gsap.fromTo(celebrateBtn, 
-      { scale: 0.95 }, 
-      { scale: 1, duration: 0.4, ease: 'elastic.out(1.2, 0.4)' }
-    );
-  });
-}
 
 // Init
 resizeCanvas();
