@@ -1,8 +1,20 @@
 const patternGrid = document.getElementById('patternGrid');
 const patternCanvas = document.getElementById('patternCanvas');
 const patternFrame = document.querySelector('.pattern-frame');
-const messageCard = document.getElementById('messageCard');
+const mainContainer = document.getElementById('mainContainer');
+const typewriterPanel = document.getElementById('typewriterPanel');
+const typewriterText = document.getElementById('typewriterText');
 const lockCard = document.querySelector('.lock-card');
+
+const TYPEWRITER_SENTENCES = [
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+  'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+  'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+  'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+];
+
+let typewriterTimeline = null;
+let sentenceIndex = 0;
 
 const correctPattern = ['1', '8', '5', '3'];
 let currentPattern = [];
@@ -94,17 +106,55 @@ function updateConfetti() {
   }
 }
 
-// --- Text Reveal Logic ---
-function splitTextToSpans(element) {
-  const text = element.textContent;
-  element.textContent = '';
-  const characters = text.split('');
-  characters.forEach(char => {
-    const span = document.createElement('span');
-    span.textContent = char === ' ' ? '\u00A0' : char;
-    span.style.display = 'inline-block';
-    element.appendChild(span);
+// --- Typewriter ---
+function stopTypewriter() {
+  if (typewriterTimeline) {
+    typewriterTimeline.kill();
+    typewriterTimeline = null;
+  }
+}
+
+function playTypewriterSentence() {
+  const sentence = TYPEWRITER_SENTENCES[sentenceIndex];
+  sentenceIndex = (sentenceIndex + 1) % TYPEWRITER_SENTENCES.length;
+
+  stopTypewriter();
+  typewriterText.textContent = '';
+
+  const typingProxy = { progress: 0 };
+  typewriterTimeline = gsap.timeline({
+    onComplete: () => {
+      gsap.to(typewriterText, {
+        opacity: 0,
+        duration: 2.2,
+        ease: 'power1.inOut',
+        delay: 1.4,
+        onComplete: () => {
+          gsap.delayedCall(0.9, playTypewriterSentence);
+        },
+      });
+    },
   });
+
+  typewriterTimeline
+    .set(typewriterText, { opacity: 0 })
+    .to(typewriterText, { opacity: 1, duration: 1.4, ease: 'power2.out' })
+    .to(typingProxy, {
+      progress: 1,
+      duration: sentence.length * 0.048,
+      ease: 'none',
+      onUpdate: () => {
+        const count = Math.floor(typingProxy.progress * sentence.length);
+        typewriterText.textContent = sentence.slice(0, count);
+      },
+    }, '-=0.6')
+    .to({}, { duration: 2.8 });
+}
+
+function startTypewriter() {
+  sentenceIndex = 0;
+  stopTypewriter();
+  playTypewriterSentence();
 }
 
 // --- Pattern Canvas Core ---
@@ -199,32 +249,18 @@ function updatePointerPosition(event) {
 
 // --- Transitions ---
 function showMessageWithTransition() {
-  // Prep text for split reveal animation
-  const animElements = messageCard.querySelectorAll('.animate-text');
-  animElements.forEach(el => {
-    if (!el.dataset.split) {
-      splitTextToSpans(el);
-      el.dataset.split = "true";
-    }
-  });
-
-  // Start confetti animation loops
   gsap.ticker.add(updateConfetti);
 
-  // Confetti explosion from center of card
   spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.55, 130);
-
-  // Side shoots shortly after
   setTimeout(() => {
     spawnConfetti(0, window.innerHeight, 70);
     spawnConfetti(window.innerWidth, window.innerHeight, 70);
   }, 250);
 
-  // Prepare messageCard state immediately to avoid popping
-  messageCard.classList.remove('hidden');
-  gsap.set(messageCard, { opacity: 0, scale: 0.95, y: 35 });
+  mainContainer.classList.add('is-unlocked');
+  typewriterPanel.classList.remove('hidden');
+  gsap.set(typewriterPanel, { opacity: 0, x: -40 });
 
-  // Master timeline for switching screens
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
   tl.to(lockCard, {
@@ -235,29 +271,15 @@ function showMessageWithTransition() {
     pointerEvents: 'none',
     onComplete: () => {
       lockCard.classList.add('hidden');
-    }
+    },
   });
 
-  tl.to(messageCard, 
-    { opacity: 1, scale: 1, y: 0, duration: 0.9 },
-    "-=0.35"
-  );
-
-  tl.fromTo(messageCard.querySelector('.message-icon'),
-    { scale: 0, rotation: -30 },
-    { scale: 1, rotation: 0, ease: 'back.out(1.8)', duration: 0.8 },
-    "-=0.6"
-  );
-
-  animElements.forEach((el, idx) => {
-    const spans = el.querySelectorAll('span');
-    tl.fromTo(spans,
-      { opacity: 0, y: 15, rotateX: -30 },
-      { opacity: 1, y: 0, rotateX: 0, stagger: 0.015, duration: 0.6 },
-      `-=${idx === 0 ? 0.45 : 0.55}`
-    );
-  });
-
+  tl.to(typewriterPanel, {
+    opacity: 1,
+    x: 0,
+    duration: 1.1,
+    onComplete: startTypewriter,
+  }, '-=0.25');
 }
 
 function triggerPatternSuccess() {
