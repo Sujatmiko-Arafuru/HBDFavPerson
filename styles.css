@@ -90,12 +90,20 @@ body {
 }
 
 .pattern-frame {
+  --pattern-cell: 56px;
+  --pattern-gap: 28px;
+  --pattern-size: calc(3 * var(--pattern-cell) + 2 * var(--pattern-gap));
   position: relative;
+  width: calc(var(--pattern-size) + 36px);
+  height: calc(var(--pattern-size) + 36px);
   padding: 18px;
   margin: 0 auto 24px;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pattern-canvas {
@@ -108,44 +116,74 @@ body {
 
 .pattern-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(40px, 1fr));
-  gap: 36px;
+  grid-template-columns: repeat(3, var(--pattern-cell));
+  grid-template-rows: repeat(3, var(--pattern-cell));
+  gap: var(--pattern-gap);
+  width: var(--pattern-size);
+  height: var(--pattern-size);
   position: relative;
   touch-action: none;
 }
 
 .dot {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1;
+  width: var(--pattern-cell);
+  height: var(--pattern-cell);
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.04);
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  border: none;
+  background: transparent;
   cursor: pointer;
   padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+  transition: transform 0.2s ease;
 }
 
 .dot::after {
   content: '';
-  position: absolute;
-  inset: 0;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  box-sizing: border-box;
 }
 
-.dot:hover,
-.dot.active {
-  border-color: var(--accent);
-  background: rgba(247, 183, 51, 0.18);
-  box-shadow: 0 0 0 10px rgba(247, 183, 51, 0.08);
-  transform: scale(1.05);
+/* Hover effect on outer button, target internal dot */
+.dot:hover::after {
+  border-color: #26c6da;
+  background: rgba(38, 198, 218, 0.15);
+  transform: scale(1.25);
 }
 
-.dot:hover,
-.dot.active {
-  border-color: var(--accent);
-  background: rgba(247, 183, 51, 0.18);
-  transform: scale(1.04);
+/* Active Pattern state */
+.dot.active::after {
+  border: none;
+  background: #26c6da;
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 10px rgba(38, 198, 218, 0.8);
+}
+
+/* Success Pattern state */
+.dot.active.success::after {
+  border: none;
+  background: #1dd1a1;
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 12px rgba(29, 209, 161, 0.8);
+}
+
+/* Error Pattern state */
+.dot.active.error::after {
+  border: none;
+  background: var(--danger);
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 12px rgba(255, 95, 122, 0.8);
 }
 
 .actions {
@@ -214,29 +252,17 @@ body {
     width: min(92vw, 100%);
     padding: 22px;
   }
-
-  .pattern-grid {
-    grid-template-columns: repeat(3, minmax(38px, 1fr));
-    gap: 24px;
-  }
-
-  .dot {
-    font-size: 0.95rem;
-  }
 }
 
 @media (max-width: 520px) {
-  .pattern-grid {
-    gap: 18px;
+  .pattern-frame {
+    --pattern-cell: 48px;
+    --pattern-gap: 22px;
   }
 
   .card {
     padding: 18px;
     border-radius: 22px;
-  }
-
-  .dot {
-    min-height: 0;
   }
 
   .actions {

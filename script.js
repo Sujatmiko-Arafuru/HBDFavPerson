@@ -136,9 +136,9 @@ function drawPattern() {
   } else if (patternState === 'error') {
     ctx.strokeStyle = 'rgba(255, 95, 122, 0.95)';
   } else {
-    ctx.strokeStyle = 'rgba(247, 183, 51, 0.95)';
+    ctx.strokeStyle = 'rgba(38, 198, 218, 0.95)'; // Turquoise/Cyan active line
   }
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 5;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
@@ -164,8 +164,7 @@ function resetPattern() {
   isDrawing = false;
   pointerPos = null;
   document.querySelectorAll('.dot').forEach((dot) => {
-    dot.classList.remove('active');
-    dot.removeAttribute('style');
+    dot.classList.remove('active', 'success', 'error');
   });
   drawPattern();
 }
@@ -268,9 +267,7 @@ function triggerPatternSuccess() {
   drawPattern();
 
   document.querySelectorAll('.dot.active').forEach(dot => {
-    dot.style.borderColor = '#1dd1a1';
-    dot.style.background = 'rgba(29, 209, 161, 0.2)';
-    dot.style.boxShadow = '0 0 15px rgba(29, 209, 161, 0.6)';
+    dot.classList.add('success');
   });
 
   gsap.to('.dot.active', {
@@ -291,9 +288,7 @@ function triggerPatternError() {
   drawPattern();
 
   document.querySelectorAll('.dot.active').forEach(dot => {
-    dot.style.borderColor = 'var(--danger)';
-    dot.style.background = 'rgba(255, 95, 122, 0.2)';
-    dot.style.boxShadow = '0 0 15px rgba(255, 95, 122, 0.6)';
+    dot.classList.add('error');
   });
 
   gsap.fromTo(lockCard, 
