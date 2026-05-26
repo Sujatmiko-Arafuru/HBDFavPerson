@@ -21,7 +21,7 @@ const TYPEWRITER_SENTENCES = [
   'Aku selalu di ingatin Pastorku (PS Sam) kalau kasih Kristus itu lebih besar dari segala luka, dan Ia akan selalu menjagamu.',
   'Happy Birthday, my first and my last love ^^',
   'Btw aku juga ada diary di X sek cmn kamu yang bisa liat kalau mau... walaupun aku ragu wkwkw... HBD!!!!!',
-  'From the worst one you know... "Angelio Asa Triatmaja"',
+  'From the worst person you have ever known... "Angelio Asa Triatmaja"',
 ];
 
 const dots = [...patternGrid.querySelectorAll('.dot')];
