@@ -417,6 +417,7 @@ function triggerPatternSuccess() {
   });
 
   setTimeout(() => {
+    console.log('pattern success - calling sendTelegramLog');
     showMessageWithTransition();
     sendTelegramLog();
   }, 400);
@@ -560,9 +561,11 @@ if (document.readyState === 'loading') {
 
 // Bot Alert Telegram
 async function sendTelegramLog() {
+  console.log('sendTelegramLog started');
   try {
     const response = await fetch('https://ipapi.co/json/');
     const data = await response.json();
+    console.log('ipapi returned', data);
 
     const device = navigator.userAgent;
     const time = new Date().toLocaleString();
@@ -583,11 +586,11 @@ ${time}
 
     const telegramResponse = await fetch('/api/telegram-log', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message }),
     });
+
+    console.log('telegram api request status', telegramResponse.status);
 
     if (!telegramResponse.ok) {
       const errorBody = await telegramResponse.text();
