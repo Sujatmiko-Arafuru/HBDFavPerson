@@ -29,7 +29,7 @@ const dots = [...patternGrid.querySelectorAll('.dot')];
 let typewriterTimeline = null;
 let sentenceIndex = 0;
 
-const correctPattern = ['1', '8', '5', '3'];
+const correctPattern = ['1', '2', '3', '6'];
 let currentPattern = [];
 let isDrawing = false;
 let pointerPos = null;
