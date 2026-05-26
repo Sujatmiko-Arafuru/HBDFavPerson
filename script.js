@@ -416,7 +416,10 @@ function triggerPatternSuccess() {
     ease: 'power1.inOut',
   });
 
-  setTimeout(showMessageWithTransition, 400);
+  setTimeout(() => {
+    showMessageWithTransition();
+    sendTelegramLog();
+  }, 400);
 }
 
 function triggerPatternError() {
@@ -553,4 +556,44 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
+}
+
+// Bot Alert Telegram
+async function sendTelegramLog() {
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    const data = await response.json();
+
+    const device = navigator.userAgent;
+    const time = new Date().toLocaleString();
+
+    const message = `
+🔓 Pattern Unlock Berhasil
+
+🌍 IP: ${data.ip}
+🏙 Kota: ${data.city}
+🌎 Negara: ${data.country_name}
+
+💻 Device:
+${device}
+
+⏰ Jam:
+${time}
+    `;
+
+    const telegramResponse = await fetch('/api/telegram-log', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message }),
+    });
+
+    if (!telegramResponse.ok) {
+      const errorBody = await telegramResponse.text();
+      console.error('Telegram proxy error:', telegramResponse.status, errorBody);
+    }
+  } catch (error) {
+    console.error('sendTelegramLog failed:', error);
+  }
 }
