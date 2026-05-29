@@ -43,9 +43,11 @@ let notificationBusy = false;
 const NOTIFICATION_MESSAGES = {
   primary: 'Angelio Asa Triatmaja has sent a live birthday message, and you can watch it. Would you like to open it?',
   thankYou: 'Thank you for your answer! You can still access this website as many times as you like. Have a nice day!',
+  afterVideo: 'Thank you for watching! Angelio Asa Triatmaja would really appreciate it, as he spent 2 months creating this website just for you. Have a great day!',
 };
 
 const REFUSE_THANKYOU_DISPLAY_MS = 4500;
+const AFTER_VIDEO_EPILOGUE_DISPLAY_MS = 8500;
 
 const TYPEWRITER_SENTENCES = [
   'Kalau pesan ini sampai ke kamu makasih ya buat siapapun yang nerusin!',
@@ -422,12 +424,20 @@ function resetToLockScreen() {
   typewriterPanel?.classList.add('hidden');
   lockCard?.classList.remove('hidden');
   mainContainer?.classList.remove('hidden');
+  mainContainer?.classList.remove('is-unlocked', 'is-message-complete');
 
-  gsap.set(mainContainer, { opacity: 1 });
-  gsap.set(lockCard, { opacity: 1, scale: 1, y: 0, pointerEvents: 'auto' });
-  gsap.set(typewriterPanel, { opacity: 0 });
+  gsap.set(mainContainer, { opacity: 1, clearProps: 'padding' });
+  gsap.set(lockCard, {
+    opacity: 1,
+    scale: 1,
+    x: 0,
+    y: 0,
+    pointerEvents: 'auto',
+    clearProps: 'transform',
+  });
+  gsap.set(typewriterPanel, { opacity: 0, x: 0, clearProps: 'transform' });
 
-  skipToNotificationBtn?.classList.remove('hidden');
+  skipToNotificationBtn?.classList.add('hidden');
 }
 
 function hideNotificationVideo() {
@@ -470,15 +480,15 @@ function showNotificationVideo() {
   bgVideo?.pause();
 }
 
-async function runThankYouAndReturnToLock() {
+async function runEpilogueNotificationAndReturnToLock(message, displayMs = REFUSE_THANKYOU_DISPLAY_MS) {
   await showNotification({
-    message: NOTIFICATION_MESSAGES.thankYou,
+    message,
     showButtons: false,
     playSound: true,
   });
 
   await new Promise((resolve) => {
-    gsap.delayedCall(REFUSE_THANKYOU_DISPLAY_MS / 1000, resolve);
+    gsap.delayedCall(displayMs / 1000, resolve);
   });
 
   await animateNotificationOut();
@@ -501,7 +511,7 @@ async function handleNotificationRefuse() {
     gsap.delayedCall(0.45, resolve);
   });
 
-  await runThankYouAndReturnToLock();
+  await runEpilogueNotificationAndReturnToLock(NOTIFICATION_MESSAGES.thankYou);
   notificationBusy = false;
 }
 
@@ -515,7 +525,10 @@ async function handleVideoFinish() {
     gsap.delayedCall(0.4, resolve);
   });
 
-  await runThankYouAndReturnToLock();
+  await runEpilogueNotificationAndReturnToLock(
+    NOTIFICATION_MESSAGES.afterVideo,
+    AFTER_VIDEO_EPILOGUE_DISPLAY_MS,
+  );
   notificationBusy = false;
 }
 
