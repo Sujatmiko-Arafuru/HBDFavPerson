@@ -67,6 +67,7 @@ const dots = [...patternGrid.querySelectorAll('.dot')];
 
 let typewriterTimeline = null;
 let sentenceIndex = 0;
+let typewriterRunId = 0;
 
 const correctPattern = ['1', '8', '5', '3'];
 let currentPattern = [];
@@ -200,6 +201,26 @@ function stopTypewriter() {
     typewriterTimeline.kill();
     typewriterTimeline = null;
   }
+}
+
+function invalidateTypewriter() {
+  typewriterRunId += 1;
+  stopTypewriter();
+  gsap.killTweensOf([typewriterText, typewriterStage, typewriterPanel]);
+}
+
+function resetTypewriterState() {
+  invalidateTypewriter();
+  sentenceIndex = 0;
+
+  if (typewriterText) {
+    typewriterText.textContent = '';
+    gsap.set(typewriterText, { opacity: 1, clearProps: 'transform' });
+  }
+
+  typewriterStage?.classList.remove('hidden');
+  messageComplete?.classList.add('hidden');
+  typewriterPanel?.classList.remove('is-complete');
 }
 
 function resetNotificationVisualState() {
@@ -414,8 +435,7 @@ function hideNotification() {
 
 function resetToLockScreen() {
   isUnlocked = false;
-  sentenceIndex = 0;
-  stopTypewriter();
+  resetTypewriterState();
   resetPattern();
 
   if (notificationBody) notificationBody.textContent = NOTIFICATION_MESSAGES.primary;
@@ -553,7 +573,7 @@ function measureNotificationPanelHeight() {
 
 function skipToNotification() {
   isUnlocked = true;
-  stopTypewriter();
+  resetTypewriterState();
   disableConfetti();
 
   gsap.killTweensOf([lockCard, typewriterPanel, mainContainer]);
@@ -668,6 +688,7 @@ function showNotification(options = {}) {
 }
 
 function showCompleteMessage() {
+  const runId = typewriterRunId;
   stopTypewriter();
   disableConfetti();
 
@@ -676,9 +697,12 @@ function showCompleteMessage() {
     duration: 0.8,
     ease: 'power2.out',
     onComplete: () => {
+      if (runId !== typewriterRunId) return;
+
       typewriterPanel.classList.add('hidden');
       mainContainer.classList.add('hidden');
       gsap.delayedCall(0.6, () => {
+        if (runId !== typewriterRunId) return;
         showNotification({
           message: NOTIFICATION_MESSAGES.primary,
           showButtons: true,
@@ -690,6 +714,10 @@ function showCompleteMessage() {
 }
 
 function playTypewriterSentence() {
+  const runId = typewriterRunId;
+
+  if (runId !== typewriterRunId) return;
+
   if (sentenceIndex >= TYPEWRITER_SENTENCES.length) {
     showCompleteMessage();
     return;
@@ -705,16 +733,23 @@ function playTypewriterSentence() {
   const isLastSentence = sentenceIndex >= TYPEWRITER_SENTENCES.length;
   typewriterTimeline = gsap.timeline({
     onComplete: () => {
+      if (runId !== typewriterRunId) return;
+
       gsap.to(typewriterText, {
         opacity: 0,
         duration: 2.2,
         ease: 'power1.inOut',
         delay: 1.4,
         onComplete: () => {
+          if (runId !== typewriterRunId) return;
+
           if (isLastSentence) {
             showCompleteMessage();
           } else {
-            gsap.delayedCall(0.9, playTypewriterSentence);
+            gsap.delayedCall(0.9, () => {
+              if (runId !== typewriterRunId) return;
+              playTypewriterSentence();
+            });
           }
         },
       });
@@ -737,8 +772,18 @@ function playTypewriterSentence() {
 }
 
 function startTypewriter() {
+  invalidateTypewriter();
   sentenceIndex = 0;
-  stopTypewriter();
+
+  if (typewriterText) {
+    typewriterText.textContent = '';
+    gsap.set(typewriterText, { opacity: 1 });
+  }
+
+  typewriterStage?.classList.remove('hidden');
+  messageComplete?.classList.add('hidden');
+  typewriterPanel?.classList.remove('is-complete');
+
   playTypewriterSentence();
 }
 
