@@ -9,6 +9,29 @@ const messageComplete = document.getElementById('messageComplete');
 const messageParagraph = document.getElementById('messageParagraph');
 const lockCard = document.querySelector('.lock-card');
 const bgVideo = document.querySelector('.bg-video');
+const skipToNotificationBtn = document.getElementById('skipToNotification');
+const notificationOverlay = document.getElementById('notificationOverlay');
+const notificationReveal = document.getElementById('notificationReveal');
+const notificationBarTop = document.getElementById('notificationBarTop');
+const notificationBarBottom = document.getElementById('notificationBarBottom');
+const notificationPanel = document.getElementById('notificationPanel');
+const notificationGlitch = document.getElementById('notificationGlitch');
+const notificationEnergy = notificationPanel?.querySelector('.notification-energy');
+const notificationBox = document.getElementById('notificationBox');
+const notificationInner = document.getElementById('notificationInner');
+const notificationCancel = document.getElementById('notificationCancel');
+const notificationContinue = document.getElementById('notificationContinue');
+const notificationFrameLines = notificationBox
+  ? [...notificationBox.querySelectorAll('.notification-frame-line')]
+  : [];
+const notificationGlitchSlices = notificationGlitch
+  ? [...notificationGlitch.querySelectorAll('.notification-glitch-slice')]
+  : [];
+const notificationParticles = notificationBox
+  ? [...notificationBox.querySelectorAll('.notification-particle')]
+  : [];
+let notificationGlowTween = null;
+let notificationEntranceTimeline = null;
 
 const TYPEWRITER_SENTENCES = [
   'Kalau pesan ini sampai ke kamu makasih ya buat siapapun yang nerusin!',
@@ -163,11 +186,264 @@ function stopTypewriter() {
   }
 }
 
+function resetNotificationVisualState() {
+  stopNotificationEffects();
+
+  gsap.killTweensOf([
+    notificationOverlay,
+    notificationReveal,
+    notificationBarTop,
+    notificationBarBottom,
+    notificationPanel,
+    notificationBox,
+    notificationInner,
+    notificationFrameLines,
+    notificationGlitchSlices,
+    notificationParticles,
+    ...(notificationBox ? notificationBox.querySelectorAll('.notification-btn') : []),
+  ]);
+
+  notificationPanel?.classList.remove('is-glitching');
+  notificationGlitch?.classList.remove('is-active');
+  notificationEnergy?.classList.remove('is-live');
+  notificationBarTop?.classList.remove('is-pulsing');
+  notificationBarBottom?.classList.remove('is-pulsing');
+
+  gsap.set(notificationOverlay, { opacity: 0 });
+  gsap.set(notificationReveal, { opacity: 1, scale: 1 });
+  gsap.set([notificationBarTop, notificationBarBottom], {
+    opacity: 0,
+    scaleX: 0.12,
+    y: 0,
+    filter: 'brightness(1.4)',
+  });
+  gsap.set(notificationPanel, { height: 0, opacity: 0 });
+  gsap.set(notificationBox, { opacity: 0, x: 0, skewX: 0, filter: 'none' });
+  gsap.set(notificationInner, { opacity: 0, y: 12 });
+  gsap.set(notificationFrameLines, { opacity: 0, scaleY: 0 });
+  gsap.set(notificationGlitchSlices, { opacity: 0, top: '20%' });
+  gsap.set(notificationParticles, { opacity: 0 });
+}
+
+function runGlitchBurst() {
+  if (!notificationPanel || !notificationBox) return;
+
+  notificationPanel.classList.add('is-glitching');
+  notificationGlitch?.classList.add('is-active');
+
+  const glitchTl = gsap.timeline({
+    onComplete: () => {
+      notificationPanel.classList.remove('is-glitching');
+      notificationGlitch?.classList.remove('is-active');
+      gsap.set(notificationBox, { x: 0, skewX: 0 });
+      gsap.set(notificationGlitchSlices, { opacity: 0 });
+    },
+  });
+
+  for (let i = 0; i < 14; i += 1) {
+    glitchTl.to(notificationBox, {
+      x: gsap.utils.random(-14, 14),
+      skewX: gsap.utils.random(-5, 5),
+      duration: 0.035,
+      ease: 'none',
+    }, i * 0.04);
+    glitchTl.to(notificationGlitchSlices, {
+      opacity: gsap.utils.random(0.25, 0.95),
+      top: `${gsap.utils.random(2, 88)}%`,
+      duration: 0.03,
+      ease: 'steps(1)',
+    }, i * 0.04);
+  }
+
+  glitchTl.to(notificationBox, { x: 0, skewX: 0, duration: 0.05 });
+  return glitchTl;
+}
+
+function clearNotificationGlitchAndBlink() {
+  notificationPanel?.classList.remove('is-glitching');
+  notificationGlitch?.classList.remove('is-active');
+  gsap.set(notificationBox, { opacity: 1, x: 0, skewX: 0, filter: 'none' });
+  gsap.set(notificationGlitchSlices, { opacity: 0 });
+}
+
+function finalizeNotificationEntrance() {
+  clearNotificationGlitchAndBlink();
+  startNotificationAmbientEffects();
+}
+
+function startNotificationAmbientEffects() {
+  notificationBarTop?.classList.add('is-pulsing');
+  notificationBarBottom?.classList.add('is-pulsing');
+  notificationEnergy?.classList.add('is-live');
+
+  if (notificationGlowTween) notificationGlowTween.kill();
+  notificationGlowTween = gsap.to(notificationBox, {
+    boxShadow: '0 0 48px rgba(123, 47, 247, 0.55), 0 0 90px rgba(0, 229, 255, 0.22), inset 0 0 70px rgba(30, 0, 255, 0.14)',
+    repeat: -1,
+    yoyo: true,
+    duration: 2,
+    ease: 'sine.inOut',
+  });
+
+  gsap.to(notificationParticles, {
+    opacity: 0.7,
+    y: '-=24',
+    x: '+=16',
+    repeat: -1,
+    yoyo: true,
+    duration: 3,
+    stagger: 0.3,
+    ease: 'power1.inOut',
+  });
+}
+
+function stopNotificationEffects() {
+  if (notificationEntranceTimeline) {
+    notificationEntranceTimeline.kill();
+    notificationEntranceTimeline = null;
+  }
+  if (notificationGlowTween) {
+    notificationGlowTween.kill();
+    notificationGlowTween = null;
+  }
+
+  gsap.killTweensOf(notificationParticles);
+  notificationPanel?.classList.remove('is-glitching');
+  notificationGlitch?.classList.remove('is-active');
+  notificationEnergy?.classList.remove('is-live');
+  notificationBarTop?.classList.remove('is-pulsing');
+  notificationBarBottom?.classList.remove('is-pulsing');
+}
+
+function hideNotification() {
+  if (!notificationOverlay) return;
+
+  stopNotificationEffects();
+
+  gsap.to(notificationOverlay, {
+    opacity: 0,
+    duration: 0.5,
+    ease: 'power2.in',
+    onComplete: () => {
+      notificationOverlay.classList.remove('is-visible');
+      notificationOverlay.classList.add('hidden');
+      resetNotificationVisualState();
+      skipToNotificationBtn?.classList.remove('hidden');
+    },
+  });
+}
+
+function measureNotificationPanelHeight() {
+  gsap.set(notificationPanel, { height: 'auto', visibility: 'hidden', opacity: 1 });
+  const panelHeight = notificationPanel.offsetHeight;
+  gsap.set(notificationPanel, { height: 0, visibility: 'visible', opacity: 0 });
+  return panelHeight;
+}
+
+function skipToNotification() {
+  isUnlocked = true;
+  stopTypewriter();
+  disableConfetti();
+
+  gsap.killTweensOf([lockCard, typewriterPanel, mainContainer]);
+  lockCard.classList.add('hidden');
+  typewriterPanel.classList.add('hidden');
+  mainContainer.classList.add('hidden');
+  gsap.set([lockCard, typewriterPanel, mainContainer], { opacity: 0 });
+
+  skipToNotificationBtn?.classList.add('hidden');
+  showNotification();
+}
+
+function showNotification() {
+  if (!notificationOverlay || !notificationBox || !notificationPanel) return;
+
+  resetNotificationVisualState();
+  skipToNotificationBtn?.classList.add('hidden');
+
+  notificationOverlay.classList.remove('hidden');
+  notificationOverlay.classList.add('is-visible');
+
+  const panelHeight = measureNotificationPanelHeight();
+  const notificationButtons = notificationBox.querySelectorAll('.notification-btn');
+  gsap.set(notificationButtons, { opacity: 0, y: 20 });
+
+  const tl = gsap.timeline({
+    defaults: { ease: 'power3.inOut' },
+    onComplete: finalizeNotificationEntrance,
+  });
+  notificationEntranceTimeline = tl;
+
+  // 1) overlay fades in
+  tl.to(notificationOverlay, { opacity: 1, duration: 0.45, ease: 'power2.out' });
+
+  // 2) two glowing bars appear close together (narrow, centered)
+  tl.fromTo(
+    [notificationBarTop, notificationBarBottom],
+    { opacity: 0, scaleX: 0.1, filter: 'brightness(2)' },
+    {
+      opacity: 1,
+      scaleX: 1,
+      filter: 'brightness(1.25)',
+      duration: 0.38,
+      ease: 'power2.out',
+      stagger: 0.06,
+    },
+    '-=0.1',
+  );
+
+  // 3) bars spread apart vertically as panel opens between them
+  tl.to(
+    notificationPanel,
+    {
+      height: panelHeight,
+      opacity: 1,
+      duration: 0.95,
+      ease: 'power3.inOut',
+    },
+    '+=0.08',
+  );
+
+  // 4) box materializes with digital glitch
+  tl.fromTo(
+    notificationBox,
+    { opacity: 0, filter: 'blur(8px) brightness(1.6)' },
+    { opacity: 1, filter: 'blur(0px) brightness(1)', duration: 0.35, ease: 'power2.out' },
+    '-=0.55',
+  );
+  tl.add(runGlitchBurst, '-=0.2');
+
+  // 5) side energy lines + content
+  tl.to(
+    notificationFrameLines,
+    { opacity: 0.9, scaleY: 1, duration: 0.5, stagger: 0.08, ease: 'power2.out' },
+    '-=0.15',
+  );
+  tl.to(
+    notificationInner,
+    { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' },
+    '-=0.35',
+  );
+  tl.to(
+    notificationButtons,
+    {
+      opacity: 1,
+      y: 0,
+      stagger: 0.18,
+      duration: 0.55,
+      ease: 'back.out(1.7)',
+    },
+    '-=0.25',
+  );
+
+  // subtle second glitch pass for cinematic feel
+  tl.add(() => runGlitchBurst(), '+=0.15');
+}
+
 function showCompleteMessage() {
   stopTypewriter();
   disableConfetti();
 
-  // keep background video visible and make foreground content blank
   gsap.to(typewriterPanel, {
     opacity: 0,
     duration: 0.8,
@@ -175,6 +451,7 @@ function showCompleteMessage() {
     onComplete: () => {
       typewriterPanel.classList.add('hidden');
       mainContainer.classList.add('hidden');
+      gsap.delayedCall(0.6, showNotification);
     },
   });
 }
@@ -552,10 +829,26 @@ function initBackgroundVideo() {
   }
 }
 
+function initNotification() {
+  if (skipToNotificationBtn) {
+    skipToNotificationBtn.addEventListener('click', skipToNotification);
+  }
+  if (notificationCancel) {
+    notificationCancel.addEventListener('click', hideNotification);
+  }
+  if (notificationContinue) {
+    notificationContinue.addEventListener('click', () => {
+      // hook for next step (e.g. open live message)
+      hideNotification();
+    });
+  }
+}
+
 function init() {
   resizeConfettiCanvas();
   resizeCanvas();
   initBackgroundVideo();
+  initNotification();
 }
 
 if (document.readyState === 'loading') {

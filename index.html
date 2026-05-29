@@ -20,6 +20,8 @@
     <div class="overlay"></div>
     <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
 
+    <button type="button" class="skip-btn" id="skipToNotification" aria-label="Lewati ke notifikasi">Skip</button>
+
     <main class="container" id="mainContainer">
       <section class="card lock-card">
         <div class="card-header">
@@ -60,6 +62,47 @@
         </div>
       </aside>
     </main>
+
+    <div class="notification-overlay hidden" id="notificationOverlay" role="dialog" aria-modal="true" aria-labelledby="notificationTitle">
+      <div class="notification-reveal" id="notificationReveal">
+        <div class="notification-bar notification-bar--top" id="notificationBarTop" aria-hidden="true"></div>
+        <div class="notification-panel" id="notificationPanel">
+          <div class="notification-glitch" id="notificationGlitch" aria-hidden="true">
+            <span class="notification-glitch-slice"></span>
+            <span class="notification-glitch-slice"></span>
+            <span class="notification-glitch-slice"></span>
+            <span class="notification-glitch-slice"></span>
+          </div>
+          <div class="notification-energy" aria-hidden="true"></div>
+          <div class="notification-box" id="notificationBox">
+            <div class="notification-frame-lines" aria-hidden="true">
+              <span class="notification-frame-line notification-frame-line--left"></span>
+              <span class="notification-frame-line notification-frame-line--right"></span>
+            </div>
+            <div class="notification-inner" id="notificationInner">
+              <header class="notification-header">
+                <span class="notification-icon" aria-hidden="true">!</span>
+                <h2 class="notification-title" id="notificationTitle">NOTIFICATION</h2>
+              </header>
+              <p class="notification-body">
+                Angelio Asa Triatmaja has sent a live birthday message, and you can watch it. Would you like to open it?
+              </p>
+              <div class="notification-buttons">
+                <button type="button" class="notification-btn notification-btn--cancel" id="notificationCancel">BATAL</button>
+                <button type="button" class="notification-btn notification-btn--continue" id="notificationContinue">LANJUTKAN</button>
+              </div>
+            </div>
+            <span class="notification-particle" aria-hidden="true"></span>
+            <span class="notification-particle" aria-hidden="true"></span>
+            <span class="notification-particle" aria-hidden="true"></span>
+            <span class="notification-particle" aria-hidden="true"></span>
+            <span class="notification-particle" aria-hidden="true"></span>
+            <span class="notification-particle" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="notification-bar notification-bar--bottom" id="notificationBarBottom" aria-hidden="true"></div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
