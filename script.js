@@ -144,6 +144,17 @@ function updateConfetti() {
   }
 }
 
+function disableConfetti() {
+  stopConfettiLoop();
+  confettiParticles = [];
+  try {
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  } catch (_) {
+    // ignore canvas errors
+  }
+  if (confettiCanvas) confettiCanvas.style.display = 'none';
+}
+
 // --- Typewriter ---
 function stopTypewriter() {
   if (typewriterTimeline) {
@@ -154,21 +165,18 @@ function stopTypewriter() {
 
 function showCompleteMessage() {
   stopTypewriter();
-  messageParagraph.textContent = TYPEWRITER_SENTENCES.join(' ');
-  typewriterPanel.classList.add('is-complete');
-  mainContainer.classList.add('is-message-complete');
+  disableConfetti();
 
-  const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
-  tl.to(typewriterStage, {
+  // keep background video visible and make foreground content blank
+  gsap.to(typewriterPanel, {
     opacity: 0,
     duration: 0.8,
+    ease: 'power2.out',
     onComplete: () => {
-      typewriterStage.classList.add('hidden');
+      typewriterPanel.classList.add('hidden');
+      mainContainer.classList.add('hidden');
     },
   });
-  tl.set(messageComplete, { opacity: 0 });
-  tl.call(() => messageComplete.classList.remove('hidden'));
-  tl.to(messageComplete, { opacity: 1, duration: 1.1 }, '-=0.15');
 }
 
 function playTypewriterSentence() {
@@ -366,11 +374,8 @@ function endDrawing(event) {
 
 // --- Transitions ---
 function showMessageWithTransition() {
-  spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.55, 130);
-  setTimeout(() => {
-    spawnConfetti(0, window.innerHeight, 70);
-    spawnConfetti(window.innerWidth, window.innerHeight, 70);
-  }, 250);
+  // user requested: no particle/confetti effects after correct pattern
+  disableConfetti();
 
   mainContainer.classList.add('is-unlocked');
   typewriterPanel.classList.remove('hidden');
