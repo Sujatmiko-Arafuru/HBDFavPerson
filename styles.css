@@ -990,6 +990,87 @@ body:has(.container.is-message-complete) {
 .notification-box > .notification-particle:nth-of-type(5) { top: 45%; left: 4%; }
 .notification-box > .notification-particle:nth-of-type(6) { top: 50%; right: 5%; background: #00e5ff; }
 
+.notification-buttons.hidden {
+  display: none;
+}
+
+.video-finish-btn {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  right: max(14px, env(safe-area-inset-right, 0px));
+  z-index: 13;
+  padding: 8px 16px;
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  border-radius: 4px;
+  background: rgba(8, 12, 28, 0.85);
+  color: rgba(232, 236, 255, 0.95);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.video-finish-btn:hover {
+  background: rgba(20, 28, 50, 0.95);
+  border-color: rgba(0, 229, 255, 0.75);
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.4);
+}
+
+.video-finish-btn:focus-visible {
+  outline: 2px solid #00e5ff;
+  outline-offset: 2px;
+}
+
+.video-finish-btn.hidden {
+  display: none;
+}
+
+.notification-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 32px);
+  background: rgba(2, 4, 12, 0.88);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.notification-video-overlay.is-visible {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.notification-video {
+  width: min(960px, 94vw);
+  max-height: min(88vh, 900px);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  box-shadow:
+    0 0 40px rgba(0, 229, 255, 0.25),
+    0 0 80px rgba(123, 47, 247, 0.2);
+  background: #000;
+}
+
+.notification-sound {
+  display: none;
+}
+
+.notification-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 @media (max-width: 520px) {
   .notification-buttons {
     flex-direction: column;

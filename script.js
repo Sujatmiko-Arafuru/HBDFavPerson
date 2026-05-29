@@ -19,8 +19,14 @@ const notificationGlitch = document.getElementById('notificationGlitch');
 const notificationEnergy = notificationPanel?.querySelector('.notification-energy');
 const notificationBox = document.getElementById('notificationBox');
 const notificationInner = document.getElementById('notificationInner');
+const notificationBody = document.getElementById('notificationBody');
+const notificationButtonsWrap = document.querySelector('.notification-buttons');
 const notificationCancel = document.getElementById('notificationCancel');
 const notificationContinue = document.getElementById('notificationContinue');
+const notificationSound = document.getElementById('notificationSound');
+const notificationVideoOverlay = document.getElementById('notificationVideoOverlay');
+const notificationVideo = document.getElementById('notificationVideo');
+const videoFinishBtn = document.getElementById('videoFinishBtn');
 const notificationFrameLines = notificationBox
   ? [...notificationBox.querySelectorAll('.notification-frame-line')]
   : [];
@@ -32,6 +38,14 @@ const notificationParticles = notificationBox
   : [];
 let notificationGlowTween = null;
 let notificationEntranceTimeline = null;
+let notificationBusy = false;
+
+const NOTIFICATION_MESSAGES = {
+  primary: 'Angelio Asa Triatmaja has sent a live birthday message, and you can watch it. Would you like to open it?',
+  thankYou: 'Thank you for your answer! You can still access this website as many times as you like. Have a nice day!',
+};
+
+const REFUSE_THANKYOU_DISPLAY_MS = 4500;
 
 const TYPEWRITER_SENTENCES = [
   'Kalau pesan ini sampai ke kamu makasih ya buat siapapun yang nerusin!',
@@ -315,22 +329,206 @@ function stopNotificationEffects() {
   notificationBarBottom?.classList.remove('is-pulsing');
 }
 
-function hideNotification() {
-  if (!notificationOverlay) return;
+function setNotificationButtonsVisible(visible) {
+  notificationButtonsWrap?.classList.toggle('hidden', !visible);
+}
 
-  stopNotificationEffects();
+function setNotificationButtonsDisabled(disabled) {
+  if (notificationCancel) notificationCancel.disabled = disabled;
+  if (notificationContinue) notificationContinue.disabled = disabled;
+}
 
-  gsap.to(notificationOverlay, {
-    opacity: 0,
-    duration: 0.5,
-    ease: 'power2.in',
-    onComplete: () => {
-      notificationOverlay.classList.remove('is-visible');
-      notificationOverlay.classList.add('hidden');
-      resetNotificationVisualState();
-      skipToNotificationBtn?.classList.remove('hidden');
-    },
+function playNotificationSound() {
+  if (!notificationSound) return;
+  notificationSound.currentTime = 0;
+  notificationSound.play().catch(() => {});
+}
+
+function closeNotificationOverlay() {
+  notificationOverlay?.classList.remove('is-visible');
+  notificationOverlay?.classList.add('hidden');
+  resetNotificationVisualState();
+}
+
+function animateNotificationOut(options = {}) {
+  const { fadeOnly = false } = options;
+
+  return new Promise((resolve) => {
+    if (!notificationOverlay) {
+      resolve();
+      return;
+    }
+
+    stopNotificationEffects();
+    clearNotificationGlitchAndBlink();
+
+    const buttons = notificationBox?.querySelectorAll('.notification-btn') ?? [];
+    const tl = gsap.timeline({ onComplete: resolve });
+
+    if (fadeOnly) {
+      tl.to(notificationReveal, { opacity: 0, duration: 0.6, ease: 'power2.in' });
+      tl.to(notificationOverlay, { opacity: 0, duration: 0.45, ease: 'power2.in' }, '-=0.3');
+      return;
+    }
+
+    tl.to(buttons, { opacity: 0, y: 10, duration: 0.2, stagger: 0.05 });
+    tl.to(notificationInner, { opacity: 0, y: 8, duration: 0.22 }, '-=0.12');
+    tl.to(notificationFrameLines, { opacity: 0, scaleY: 0, duration: 0.28, stagger: 0.05 }, '-=0.15');
+    tl.to(notificationBox, {
+      opacity: 0,
+      filter: 'blur(8px) brightness(0.8)',
+      duration: 0.28,
+    }, '-=0.2');
+    tl.to(notificationPanel, {
+      height: 0,
+      opacity: 0,
+      duration: 0.82,
+      ease: 'power3.inOut',
+    });
+    tl.to([notificationBarTop, notificationBarBottom], {
+      opacity: 0,
+      scaleX: 0.08,
+      filter: 'brightness(1.6)',
+      duration: 0.38,
+      ease: 'power2.in',
+      stagger: 0.06,
+    }, '-=0.42');
+    tl.to(notificationOverlay, { opacity: 0, duration: 0.4, ease: 'power2.in' }, '-=0.12');
   });
+}
+
+function hideNotification() {
+  if (!notificationOverlay || notificationBusy) return;
+
+  notificationBusy = true;
+  setNotificationButtonsDisabled(true);
+
+  animateNotificationOut().then(() => {
+    closeNotificationOverlay();
+    setNotificationButtonsDisabled(false);
+    notificationBusy = false;
+  });
+}
+
+function resetToLockScreen() {
+  isUnlocked = false;
+  sentenceIndex = 0;
+  stopTypewriter();
+  resetPattern();
+
+  if (notificationBody) notificationBody.textContent = NOTIFICATION_MESSAGES.primary;
+  setNotificationButtonsVisible(true);
+
+  typewriterPanel?.classList.add('hidden');
+  lockCard?.classList.remove('hidden');
+  mainContainer?.classList.remove('hidden');
+
+  gsap.set(mainContainer, { opacity: 1 });
+  gsap.set(lockCard, { opacity: 1, scale: 1, y: 0, pointerEvents: 'auto' });
+  gsap.set(typewriterPanel, { opacity: 0 });
+
+  skipToNotificationBtn?.classList.remove('hidden');
+}
+
+function hideNotificationVideo() {
+  return new Promise((resolve) => {
+    if (!notificationVideoOverlay) {
+      resolve();
+      return;
+    }
+
+    notificationVideo?.pause();
+    videoFinishBtn?.classList.add('hidden');
+
+    gsap.to(notificationVideoOverlay, {
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power2.in',
+      onComplete: () => {
+        notificationVideoOverlay.classList.remove('is-visible');
+        notificationVideoOverlay.classList.add('hidden');
+        bgVideo?.play().catch(() => {});
+        resolve();
+      },
+    });
+  });
+}
+
+function showNotificationVideo() {
+  if (!notificationVideoOverlay || !notificationVideo) return;
+
+  skipToNotificationBtn?.classList.add('hidden');
+  videoFinishBtn?.classList.remove('hidden');
+
+  notificationVideoOverlay.classList.remove('hidden');
+  notificationVideoOverlay.classList.add('is-visible');
+  gsap.set(notificationVideoOverlay, { opacity: 0 });
+  gsap.to(notificationVideoOverlay, { opacity: 1, duration: 0.85, ease: 'power2.out' });
+
+  notificationVideo.currentTime = 0;
+  notificationVideo.play().catch(() => {});
+  bgVideo?.pause();
+}
+
+async function runThankYouAndReturnToLock() {
+  await showNotification({
+    message: NOTIFICATION_MESSAGES.thankYou,
+    showButtons: false,
+    playSound: true,
+  });
+
+  await new Promise((resolve) => {
+    gsap.delayedCall(REFUSE_THANKYOU_DISPLAY_MS / 1000, resolve);
+  });
+
+  await animateNotificationOut();
+  closeNotificationOverlay();
+  resetToLockScreen();
+
+  setNotificationButtonsVisible(true);
+  setNotificationButtonsDisabled(false);
+}
+
+async function handleNotificationRefuse() {
+  if (notificationBusy) return;
+  notificationBusy = true;
+  setNotificationButtonsDisabled(true);
+
+  await animateNotificationOut();
+  closeNotificationOverlay();
+
+  await new Promise((resolve) => {
+    gsap.delayedCall(0.45, resolve);
+  });
+
+  await runThankYouAndReturnToLock();
+  notificationBusy = false;
+}
+
+async function handleVideoFinish() {
+  if (notificationBusy) return;
+  notificationBusy = true;
+
+  await hideNotificationVideo();
+
+  await new Promise((resolve) => {
+    gsap.delayedCall(0.4, resolve);
+  });
+
+  await runThankYouAndReturnToLock();
+  notificationBusy = false;
+}
+
+async function handleNotificationAccept() {
+  if (notificationBusy) return;
+  notificationBusy = true;
+  setNotificationButtonsDisabled(true);
+
+  await animateNotificationOut({ fadeOnly: true });
+  closeNotificationOverlay();
+  showNotificationVideo();
+
+  notificationBusy = false;
 }
 
 function measureNotificationPanelHeight() {
@@ -355,8 +553,19 @@ function skipToNotification() {
   showNotification();
 }
 
-function showNotification() {
-  if (!notificationOverlay || !notificationBox || !notificationPanel) return;
+function showNotification(options = {}) {
+  const {
+    message = NOTIFICATION_MESSAGES.primary,
+    showButtons = true,
+    playSound = true,
+  } = options;
+
+  if (!notificationOverlay || !notificationBox || !notificationPanel) {
+    return Promise.resolve();
+  }
+
+  if (notificationBody) notificationBody.textContent = message;
+  setNotificationButtonsVisible(showButtons);
 
   resetNotificationVisualState();
   skipToNotificationBtn?.classList.add('hidden');
@@ -368,76 +577,81 @@ function showNotification() {
   const notificationButtons = notificationBox.querySelectorAll('.notification-btn');
   gsap.set(notificationButtons, { opacity: 0, y: 20 });
 
-  const tl = gsap.timeline({
-    defaults: { ease: 'power3.inOut' },
-    onComplete: finalizeNotificationEntrance,
+  return new Promise((resolve) => {
+    const tl = gsap.timeline({
+      defaults: { ease: 'power3.inOut' },
+      onComplete: () => {
+        finalizeNotificationEntrance();
+        resolve();
+      },
+    });
+    notificationEntranceTimeline = tl;
+
+    tl.to(notificationOverlay, { opacity: 1, duration: 0.45, ease: 'power2.out' });
+
+    tl.fromTo(
+      [notificationBarTop, notificationBarBottom],
+      { opacity: 0, scaleX: 0.1, filter: 'brightness(2)' },
+      {
+        opacity: 1,
+        scaleX: 1,
+        filter: 'brightness(1.25)',
+        duration: 0.38,
+        ease: 'power2.out',
+        stagger: 0.06,
+        onStart: () => {
+          if (playSound) playNotificationSound();
+        },
+      },
+      '-=0.1',
+    );
+
+    tl.to(
+      notificationPanel,
+      {
+        height: panelHeight,
+        opacity: 1,
+        duration: 0.95,
+        ease: 'power3.inOut',
+      },
+      '+=0.08',
+    );
+
+    tl.fromTo(
+      notificationBox,
+      { opacity: 0, filter: 'blur(8px) brightness(1.6)' },
+      { opacity: 1, filter: 'blur(0px) brightness(1)', duration: 0.35, ease: 'power2.out' },
+      '-=0.55',
+    );
+    tl.add(runGlitchBurst, '-=0.2');
+
+    tl.to(
+      notificationFrameLines,
+      { opacity: 0.9, scaleY: 1, duration: 0.5, stagger: 0.08, ease: 'power2.out' },
+      '-=0.15',
+    );
+    tl.to(
+      notificationInner,
+      { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' },
+      '-=0.35',
+    );
+
+    if (showButtons) {
+      tl.to(
+        notificationButtons,
+        {
+          opacity: 1,
+          y: 0,
+          stagger: 0.18,
+          duration: 0.55,
+          ease: 'back.out(1.7)',
+        },
+        '-=0.25',
+      );
+    }
+
+    tl.add(() => runGlitchBurst(), '+=0.15');
   });
-  notificationEntranceTimeline = tl;
-
-  // 1) overlay fades in
-  tl.to(notificationOverlay, { opacity: 1, duration: 0.45, ease: 'power2.out' });
-
-  // 2) two glowing bars appear close together (narrow, centered)
-  tl.fromTo(
-    [notificationBarTop, notificationBarBottom],
-    { opacity: 0, scaleX: 0.1, filter: 'brightness(2)' },
-    {
-      opacity: 1,
-      scaleX: 1,
-      filter: 'brightness(1.25)',
-      duration: 0.38,
-      ease: 'power2.out',
-      stagger: 0.06,
-    },
-    '-=0.1',
-  );
-
-  // 3) bars spread apart vertically as panel opens between them
-  tl.to(
-    notificationPanel,
-    {
-      height: panelHeight,
-      opacity: 1,
-      duration: 0.95,
-      ease: 'power3.inOut',
-    },
-    '+=0.08',
-  );
-
-  // 4) box materializes with digital glitch
-  tl.fromTo(
-    notificationBox,
-    { opacity: 0, filter: 'blur(8px) brightness(1.6)' },
-    { opacity: 1, filter: 'blur(0px) brightness(1)', duration: 0.35, ease: 'power2.out' },
-    '-=0.55',
-  );
-  tl.add(runGlitchBurst, '-=0.2');
-
-  // 5) side energy lines + content
-  tl.to(
-    notificationFrameLines,
-    { opacity: 0.9, scaleY: 1, duration: 0.5, stagger: 0.08, ease: 'power2.out' },
-    '-=0.15',
-  );
-  tl.to(
-    notificationInner,
-    { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' },
-    '-=0.35',
-  );
-  tl.to(
-    notificationButtons,
-    {
-      opacity: 1,
-      y: 0,
-      stagger: 0.18,
-      duration: 0.55,
-      ease: 'back.out(1.7)',
-    },
-    '-=0.25',
-  );
-
-  // subtle second glitch pass for cinematic feel
-  tl.add(() => runGlitchBurst(), '+=0.15');
 }
 
 function showCompleteMessage() {
@@ -451,7 +665,13 @@ function showCompleteMessage() {
     onComplete: () => {
       typewriterPanel.classList.add('hidden');
       mainContainer.classList.add('hidden');
-      gsap.delayedCall(0.6, showNotification);
+      gsap.delayedCall(0.6, () => {
+        showNotification({
+          message: NOTIFICATION_MESSAGES.primary,
+          showButtons: true,
+          playSound: true,
+        });
+      });
     },
   });
 }
@@ -654,6 +874,7 @@ function showMessageWithTransition() {
   // user requested: no particle/confetti effects after correct pattern
   disableConfetti();
 
+  skipToNotificationBtn?.classList.remove('hidden');
   mainContainer.classList.add('is-unlocked');
   typewriterPanel.classList.remove('hidden');
   gsap.set(typewriterPanel, { opacity: 0, x: -40 });
@@ -834,13 +1055,13 @@ function initNotification() {
     skipToNotificationBtn.addEventListener('click', skipToNotification);
   }
   if (notificationCancel) {
-    notificationCancel.addEventListener('click', hideNotification);
+    notificationCancel.addEventListener('click', handleNotificationRefuse);
   }
   if (notificationContinue) {
-    notificationContinue.addEventListener('click', () => {
-      // hook for next step (e.g. open live message)
-      hideNotification();
-    });
+    notificationContinue.addEventListener('click', handleNotificationAccept);
+  }
+  if (videoFinishBtn) {
+    videoFinishBtn.addEventListener('click', handleVideoFinish);
   }
 }
 

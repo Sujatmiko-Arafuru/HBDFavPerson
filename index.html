@@ -20,7 +20,7 @@
     <div class="overlay"></div>
     <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
 
-    <button type="button" class="skip-btn" id="skipToNotification" aria-label="Lewati ke notifikasi">Skip</button>
+    <button type="button" class="skip-btn hidden" id="skipToNotification" aria-label="Lewati ke notifikasi">Skip</button>
 
     <main class="container" id="mainContainer">
       <section class="card lock-card">
@@ -84,12 +84,12 @@
                 <span class="notification-icon" aria-hidden="true">!</span>
                 <h2 class="notification-title" id="notificationTitle">NOTIFICATION</h2>
               </header>
-              <p class="notification-body">
+              <p class="notification-body" id="notificationBody">
                 Angelio Asa Triatmaja has sent a live birthday message, and you can watch it. Would you like to open it?
               </p>
               <div class="notification-buttons">
-                <button type="button" class="notification-btn notification-btn--cancel" id="notificationCancel">BATAL</button>
-                <button type="button" class="notification-btn notification-btn--continue" id="notificationContinue">LANJUTKAN</button>
+                <button type="button" class="notification-btn notification-btn--cancel" id="notificationCancel">REFUSE</button>
+                <button type="button" class="notification-btn notification-btn--continue" id="notificationContinue">ACCEPT</button>
               </div>
             </div>
             <span class="notification-particle" aria-hidden="true"></span>
@@ -103,6 +103,15 @@
         <div class="notification-bar notification-bar--bottom" id="notificationBarBottom" aria-hidden="true"></div>
       </div>
     </div>
+
+    <div class="notification-video-overlay hidden" id="notificationVideoOverlay">
+      <button type="button" class="video-finish-btn hidden" id="videoFinishBtn" aria-label="Selesai menonton">Finish</button>
+      <video class="notification-video" id="notificationVideo" playsinline controls preload="metadata">
+        <source src="Notification Media/System Vid.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <audio id="notificationSound" class="notification-sound" preload="auto" src="Notification Media/System Sound.mp3"></audio>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
