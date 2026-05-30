@@ -6,11 +6,30 @@
   <title>Selamat Ulang Tahun</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800&display=block" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="intro-active">
+  <div class="intro-splash" id="introSplash" aria-hidden="false">
+    <div class="intro-splash-content" id="introSplashContent">
+      <img
+        class="intro-splash-icon"
+        id="introSplashIcon"
+        src="Laptop Icon/LaptopIcon.png"
+        alt=""
+        width="120"
+        height="120"
+        decoding="async"
+      >
+      <p class="intro-splash-text">
+        USE <span class="intro-accent">LAPTOP</span> FOR BETTER<br>
+        <span class="intro-accent">EXPERIENCE</span>
+      </p>
+    </div>
+  </div>
+
   <div class="page">
     <video class="bg-video" autoplay muted loop playsinline preload="metadata">
       <source src="video/background.mp4" type="video/mp4">

@@ -24,9 +24,80 @@ body {
   overflow: hidden;
 }
 
+body.intro-active {
+  background: #000;
+}
+
 .page {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* --- Intro splash --- */
+.intro-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  padding: max(20px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+}
+
+.intro-splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: min(92vw, 520px);
+  text-align: center;
+  opacity: 0;
+}
+
+.intro-splash-icon {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.4));
+}
+
+.intro-splash-text {
+  margin: 0;
+  width: 100%;
+  min-height: 3.4em;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-synthesis: none;
+  letter-spacing: 0.14em;
+  line-height: 1.65;
+  text-transform: uppercase;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.intro-accent {
+  color: #26c6da;
+  text-shadow:
+    0 0 12px rgba(38, 198, 218, 0.65),
+    0 0 28px rgba(0, 229, 255, 0.35);
+}
+
+@media (max-width: 480px) {
+  .intro-splash-icon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .intro-splash-text {
+    font-size: 0.875rem;
+    letter-spacing: 0.11em;
+    min-height: 3.5em;
+  }
 }
 
 .bg-video {
@@ -386,20 +457,34 @@ body:has(.container.is-message-complete) {
     flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
-    padding: 18px;
+    padding:
+      max(18px, env(safe-area-inset-top, 0px))
+      max(18px, env(safe-area-inset-right, 0px))
+      max(18px, env(safe-area-inset-bottom, 0px))
+      max(18px, env(safe-area-inset-left, 0px));
     justify-content: center;
     align-items: center;
   }
 
   .container.is-unlocked {
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     min-height: 100vh;
     min-height: 100dvh;
-    padding-top: 18px;
-    padding-bottom: 18px;
-    padding-left: clamp(24px, 7vw, 48px);
-    padding-right: 24px;
+    padding-top: max(18px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(18px, env(safe-area-inset-left, 0px));
+    padding-right: max(18px, env(safe-area-inset-right, 0px));
+  }
+
+  .typewriter-panel:not(.hidden) {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .typewriter-line {
+    text-align: center;
+    font-size: clamp(1.45rem, 5.5vw, 2rem);
   }
 
   .typewriter-panel {
@@ -407,7 +492,7 @@ body:has(.container.is-message-complete) {
     max-width: 100%;
     width: 100%;
     padding: 0;
-    margin: auto 0;
+    margin: 0 auto;
   }
 
   .typewriter-panel.is-complete {
@@ -415,10 +500,6 @@ body:has(.container.is-message-complete) {
     max-width: 100%;
     min-width: 0;
     width: 100%;
-  }
-
-  .typewriter-line {
-    font-size: clamp(1.45rem, 5.5vw, 2rem);
   }
 
   .container.is-message-complete {
@@ -1069,6 +1150,65 @@ body:has(.container.is-message-complete) {
   opacity: 0.45;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .notification-overlay {
+    padding:
+      max(12px, env(safe-area-inset-top, 0px))
+      max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px));
+  }
+
+  .notification-reveal {
+    width: min(720px, 92vw);
+    margin: 0 auto;
+  }
+
+  .notification-box {
+    padding: clamp(22px, 5vw, 32px) clamp(16px, 4vw, 24px);
+  }
+
+  .notification-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: clamp(16px, 2.5vh, 24px);
+  }
+
+  .notification-title {
+    font-size: clamp(1.15rem, 4.5vw, 1.45rem);
+    letter-spacing: 0.08em;
+  }
+
+  .notification-body {
+    font-size: clamp(0.88rem, 3.6vw, 1rem);
+    line-height: 1.6;
+    margin-bottom: clamp(20px, 3vh, 28px);
+  }
+
+  .notification-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .notification-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .notification-video {
+    width: min(960px, 96vw);
+    max-height: min(72vh, 720px);
+  }
+
+  .skip-btn,
+  .video-finish-btn {
+    top: max(10px, env(safe-area-inset-top, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+  }
 }
 
 @media (max-width: 520px) {

@@ -1,4 +1,6 @@
 const patternGrid = document.getElementById('patternGrid');
+const introSplash = document.getElementById('introSplash');
+const introSplashContent = document.getElementById('introSplashContent');
 const patternCanvas = document.getElementById('patternCanvas');
 const patternFrame = document.querySelector('.pattern-frame');
 const mainContainer = document.getElementById('mainContainer');
@@ -69,7 +71,7 @@ let typewriterTimeline = null;
 let sentenceIndex = 0;
 let typewriterRunId = 0;
 
-const correctPattern = ['1', '8', '5', '3'];
+const correctPattern = ['1', '2', '3', '4'];
 let currentPattern = [];
 let isDrawing = false;
 let pointerPos = null;
@@ -373,9 +375,7 @@ function closeNotificationOverlay() {
   resetNotificationVisualState();
 }
 
-function animateNotificationOut(options = {}) {
-  const { fadeOnly = false } = options;
-
+function animateNotificationOut() {
   return new Promise((resolve) => {
     if (!notificationOverlay) {
       resolve();
@@ -386,13 +386,10 @@ function animateNotificationOut(options = {}) {
     clearNotificationGlitchAndBlink();
 
     const buttons = notificationBox?.querySelectorAll('.notification-btn') ?? [];
-    const tl = gsap.timeline({ onComplete: resolve });
+    const panelHeight = notificationPanel.offsetHeight || measureNotificationPanelHeight();
+    gsap.set(notificationPanel, { height: panelHeight });
 
-    if (fadeOnly) {
-      tl.to(notificationReveal, { opacity: 0, duration: 0.6, ease: 'power2.in' });
-      tl.to(notificationOverlay, { opacity: 0, duration: 0.45, ease: 'power2.in' }, '-=0.3');
-      return;
-    }
+    const tl = gsap.timeline({ onComplete: resolve });
 
     tl.to(buttons, { opacity: 0, y: 10, duration: 0.2, stagger: 0.05 });
     tl.to(notificationInner, { opacity: 0, y: 8, duration: 0.22 }, '-=0.12');
@@ -433,10 +430,59 @@ function hideNotification() {
   });
 }
 
+function hideIntroSplash() {
+  document.body.classList.remove('intro-active');
+  if (!introSplash) return;
+
+  gsap.killTweensOf([introSplash, introSplashContent]);
+  gsap.set(introSplash, { opacity: 0, display: 'none' });
+  gsap.set(introSplashContent, { opacity: 0, y: 0 });
+}
+
+function playIntroSplashAnimation() {
+  return new Promise((resolve) => {
+    if (!introSplash || !introSplashContent) {
+      resolve();
+      return;
+    }
+
+    document.body.classList.add('intro-active');
+    gsap.set(introSplash, { display: 'flex', opacity: 1 });
+    gsap.set(introSplashContent, { opacity: 0, y: 14 });
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        hideIntroSplash();
+        resolve();
+      },
+    });
+
+    tl.to(introSplashContent, {
+      opacity: 1,
+      y: 0,
+      duration: 1.1,
+      ease: 'power2.out',
+    });
+    tl.to({}, { duration: 2.4 });
+    tl.to(introSplashContent, {
+      opacity: 0,
+      y: -10,
+      duration: 0.75,
+      ease: 'power2.in',
+    });
+    tl.to(introSplash, {
+      opacity: 0,
+      duration: 0.9,
+      ease: 'power2.inOut',
+    });
+  });
+}
+
 function resetToLockScreen() {
   isUnlocked = false;
   resetTypewriterState();
   resetPattern();
+  hideIntroSplash();
 
   if (notificationBody) notificationBody.textContent = NOTIFICATION_MESSAGES.primary;
   setNotificationButtonsVisible(true);
@@ -513,6 +559,12 @@ async function runEpilogueNotificationAndReturnToLock(message, displayMs = REFUS
 
   await animateNotificationOut();
   closeNotificationOverlay();
+
+  mainContainer?.classList.add('hidden');
+  typewriterPanel?.classList.add('hidden');
+  lockCard?.classList.add('hidden');
+
+  await playIntroSplashAnimation();
   resetToLockScreen();
 
   setNotificationButtonsVisible(true);
@@ -557,10 +609,14 @@ async function handleNotificationAccept() {
   notificationBusy = true;
   setNotificationButtonsDisabled(true);
 
-  await animateNotificationOut({ fadeOnly: true });
+  await animateNotificationOut();
   closeNotificationOverlay();
-  showNotificationVideo();
 
+  await new Promise((resolve) => {
+    gsap.delayedCall(0.35, resolve);
+  });
+
+  showNotificationVideo();
   notificationBusy = false;
 }
 
@@ -1123,6 +1179,15 @@ function initNotification() {
   }
 }
 
+function runIntroSplash() {
+  if (!introSplash || !introSplashContent) {
+    document.body.classList.remove('intro-active');
+    return Promise.resolve();
+  }
+
+  return playIntroSplashAnimation();
+}
+
 function init() {
   resizeConfettiCanvas();
   resizeCanvas();
@@ -1130,10 +1195,15 @@ function init() {
   initNotification();
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
+async function boot() {
+  await runIntroSplash();
   init();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
 }
 
 // Bot Alert Telegram
