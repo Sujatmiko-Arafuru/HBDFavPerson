@@ -468,16 +468,43 @@ function ensureInteractionOverlaysDismissed() {
   videoFinishBtn?.classList.add('hidden');
 }
 
+function clearPatternTransforms() {
+  if (lockCard) gsap.set(lockCard, { clearProps: 'transform' });
+  if (patternFrame) gsap.set(patternFrame, { clearProps: 'transform' });
+  if (patternGrid) gsap.set(patternGrid, { clearProps: 'transform' });
+  gsap.set(dots, { scale: 1, clearProps: 'transform' });
+}
+
+function syncPatternLayout() {
+  if (!patternFrame || lockCard?.classList.contains('hidden')) return;
+
+  cacheLayout();
+  const rect = frameRectCache;
+  if (!rect?.width || !rect?.height) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const bitmapWidth = Math.round(rect.width * dpr);
+  const bitmapHeight = Math.round(rect.height * dpr);
+
+  patternCanvas.width = bitmapWidth;
+  patternCanvas.height = bitmapHeight;
+  patternCanvas.style.width = `${rect.width}px`;
+  patternCanvas.style.height = `${rect.height}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
 function refreshPatternLockLayout() {
   frameRectCache = null;
   isDrawing = false;
   activePointerId = null;
   pointerPos = null;
   isAnimatingError = false;
+  clearPatternTransforms();
 
   const refresh = () => {
     if (!patternFrame || lockCard?.classList.contains('hidden')) return;
-    resizeCanvas();
+    syncPatternLayout();
+    drawPattern();
   };
 
   refresh();
@@ -552,6 +579,7 @@ function resetToLockScreen() {
   gsap.set(typewriterPanel, { opacity: 0, x: 0, pointerEvents: 'none', clearProps: 'transform' });
   gsap.set(patternFrame, { pointerEvents: 'auto' });
   gsap.set(patternGrid, { pointerEvents: 'auto' });
+  clearPatternTransforms();
 
   skipToNotificationBtn?.classList.add('hidden');
   refreshPatternLockLayout();
@@ -911,13 +939,7 @@ function cacheLayout() {
 }
 
 function resizeCanvas() {
-  cacheLayout();
-  const rect = frameRectCache;
-  patternCanvas.width = rect.width * window.devicePixelRatio;
-  patternCanvas.height = rect.height * window.devicePixelRatio;
-  patternCanvas.style.width = `${rect.width}px`;
-  patternCanvas.style.height = `${rect.height}px`;
-  ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+  syncPatternLayout();
   drawPattern();
 }
 
@@ -926,7 +948,7 @@ function getPointerCoords(event) {
 }
 
 function getDotFromCoords(clientX, clientY) {
-  if (!frameRectCache) cacheLayout();
+  cacheLayout();
   const localX = clientX - frameRectCache.left;
   const localY = clientY - frameRectCache.top;
 
@@ -995,6 +1017,7 @@ function resetPattern() {
   dots.forEach((dot) => {
     dot.classList.remove('active', 'success', 'error');
   });
+  gsap.set(dots, { scale: 1, clearProps: 'transform' });
   drawPattern();
 }
 
@@ -1046,7 +1069,7 @@ function addDot(dot) {
 }
 
 function updatePointerPosition(event) {
-  if (!frameRectCache) cacheLayout();
+  cacheLayout();
   const { x, y } = getPointerCoords(event);
   pointerPos = {
     x: x - frameRectCache.left,
@@ -1166,9 +1189,23 @@ function handlePatternEnd() {
   }
 }
 
+function installPatternResizeObserver() {
+  if (!patternFrame || patternFrame.dataset.layoutObserved === '1') return;
+  patternFrame.dataset.layoutObserved = '1';
+
+  const observer = new ResizeObserver(() => {
+    if (lockCard?.classList.contains('hidden') || isDrawing) return;
+    syncPatternLayout();
+    drawPattern();
+  });
+  observer.observe(patternFrame);
+}
+
 // --- Event Listeners ---
 patternGrid.addEventListener('pointerdown', (event) => {
   if (isUnlocked || isAnimatingError) return;
+
+  syncPatternLayout();
 
   const { x, y } = getPointerCoords(event);
   const dot = getDotFromCoords(x, y) || event.target.closest('.dot');
@@ -1251,6 +1288,7 @@ function runIntroSplash() {
 function init() {
   resizeConfettiCanvas();
   resizeCanvas();
+  installPatternResizeObserver();
   initBackgroundVideo();
   initNotification();
 }
