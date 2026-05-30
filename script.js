@@ -48,14 +48,40 @@ const NOTIFICATION_MESSAGES = {
   afterVideo: 'Thank you for watching! Angelio Asa Triatmaja would really appreciate it, as he spent 2 months creating this website just for you. Have a great day!',
 };
 
-const REFUSE_THANKYOU_DISPLAY_MS = 4500;
-const AFTER_VIDEO_EPILOGUE_DISPLAY_MS = 8500;
+/**
+ * ========== ATUR WAKTU DI SINI ==========
+ * Ubah angka di bawah sesuai keinginan, lalu simpan file.
+ */
+const TIMING = {
+  /** Lama notifikasi epilog REFUSE (ms) */
+  epilogueThankYouMs: 4500,
+  /** Lama notifikasi epilog setelah Finish video (ms) */
+  epilogueAfterVideoMs: 8500,
+
+  typewriter: {
+    /** Detik per karakter saat mengetik (lebih kecil = lebih cepat) */
+    secondsPerChar: 0.06,
+    /** Fade-in setiap kalimat */
+    fadeInDuration: 0.9,
+    /** Jeda setelah kalimat selesai diketik, sebelum fade-out */
+    pauseBeforeFadeOut: 0.7,
+    /** Durasi fade-out kalimat */
+    fadeOutDuration: 1.2,
+    /** Jeda antar kalimat */
+    pauseBetweenSentences: 0.5,
+    /** Jeda singkat setelah ketikan selesai */
+    holdAfterTyping: 1.2,
+  },
+};
+
+const REFUSE_THANKYOU_DISPLAY_MS = TIMING.epilogueThankYouMs;
+const AFTER_VIDEO_EPILOGUE_DISPLAY_MS = TIMING.epilogueAfterVideoMs;
 
 const TYPEWRITER_SENTENCES = [
   'Kalau pesan ini sampai ke kamu makasih ya buat siapapun yang nerusin!',
   'Hallo Oin ^_^, lama ngga ketemu...',
   'Selamat ulang tahun yaa Oin. Udah 21 nihhh wkwkwkwk. Tapi bentar jangan tutup dulu...',
-  'Dari kecil sampai kuliah, kita pernah jalan bareng di satu cerita sek panjang walaupun endingnya ytta wkwkwkw',
+  'Dari kecil sampai kuliah, kita pernah jalan bareng di satu cerita sek panjang walaupun endingnya ytta wkwk.',
   'Kesalahan semuanya memang di aku, aku juga menyesal dan berproses untuk kembali ke Tuhan yang tentunya bakal duowo perjalanan e.',
   'Aku itu domba hilang tapi aku juga bakal ngingatin domba hilang lainnya, kalau Yesus itu gembala yang setia.',
   '"Seperti pelangi setelah hujan, kiranya hidupmu penuh warna kasih dan pengharapan."',
@@ -71,7 +97,7 @@ let typewriterTimeline = null;
 let sentenceIndex = 0;
 let typewriterRunId = 0;
 
-const correctPattern = ['1', '8', '5', '3'];
+const correctPattern = ['1', '2', '3', '4'];
 let currentPattern = [];
 let isDrawing = false;
 let pointerPos = null;
@@ -262,6 +288,19 @@ function resetNotificationVisualState() {
   gsap.set(notificationFrameLines, { opacity: 0, scaleY: 0 });
   gsap.set(notificationGlitchSlices, { opacity: 0, top: '20%' });
   gsap.set(notificationParticles, { opacity: 0 });
+
+  const buttons = notificationBox?.querySelectorAll('.notification-btn') ?? [];
+  gsap.set(buttons, { opacity: 1, y: 0, clearProps: 'transform' });
+  gsap.set(notificationOverlay, { pointerEvents: 'none' });
+  gsap.set(notificationReveal, { pointerEvents: 'auto' });
+  gsap.set(notificationBox, { pointerEvents: 'auto' });
+  setNotificationButtonsDisabled(false);
+}
+
+function prepareNotificationForShow({ showButtons = true } = {}) {
+  resetNotificationVisualState();
+  resetInteractionState();
+  setNotificationButtonsVisible(showButtons);
 }
 
 function runGlitchBurst() {
@@ -307,6 +346,7 @@ function clearNotificationGlitchAndBlink() {
 
 function finalizeNotificationEntrance() {
   clearNotificationGlitchAndBlink();
+  setNotificationButtonsDisabled(false);
   startNotificationAmbientEffects();
 }
 
@@ -361,6 +401,50 @@ function setNotificationButtonsVisible(visible) {
 function setNotificationButtonsDisabled(disabled) {
   if (notificationCancel) notificationCancel.disabled = disabled;
   if (notificationContinue) notificationContinue.disabled = disabled;
+}
+
+function resetInteractionState() {
+  notificationBusy = false;
+  setNotificationButtonsDisabled(false);
+  if (videoFinishBtn) videoFinishBtn.disabled = false;
+}
+
+function resetVideoScreenState() {
+  gsap.killTweensOf(notificationVideoOverlay);
+  if (videoFinishBtn) gsap.killTweensOf(videoFinishBtn);
+
+  notificationVideo?.pause();
+
+  if (notificationVideoOverlay) {
+    notificationVideoOverlay.classList.remove('is-visible');
+    notificationVideoOverlay.classList.add('hidden');
+    gsap.set(notificationVideoOverlay, { opacity: 0, pointerEvents: 'none' });
+  }
+
+  if (videoFinishBtn) {
+    videoFinishBtn.disabled = false;
+    videoFinishBtn.classList.add('hidden');
+    gsap.set(videoFinishBtn, { opacity: 1, pointerEvents: 'auto' });
+  }
+}
+
+function prepareVideoScreenForShow() {
+  if (!notificationVideoOverlay || !notificationVideo) return;
+
+  gsap.killTweensOf(notificationVideoOverlay);
+  if (videoFinishBtn) gsap.killTweensOf(videoFinishBtn);
+
+  skipToNotificationBtn?.classList.add('hidden');
+
+  notificationVideoOverlay.classList.remove('hidden');
+  notificationVideoOverlay.classList.add('is-visible');
+  gsap.set(notificationVideoOverlay, { opacity: 0, pointerEvents: 'auto' });
+
+  if (videoFinishBtn) {
+    videoFinishBtn.disabled = false;
+    videoFinishBtn.classList.remove('hidden');
+    gsap.set(videoFinishBtn, { opacity: 1, pointerEvents: 'auto' });
+  }
 }
 
 function playNotificationSound() {
@@ -459,13 +543,7 @@ function ensureInteractionOverlaysDismissed() {
     gsap.set(notificationOverlay, { opacity: 0, pointerEvents: 'none' });
   }
 
-  if (notificationVideoOverlay) {
-    notificationVideoOverlay.classList.remove('is-visible');
-    notificationVideoOverlay.classList.add('hidden');
-    gsap.set(notificationVideoOverlay, { opacity: 0, pointerEvents: 'none' });
-  }
-
-  videoFinishBtn?.classList.add('hidden');
+  resetVideoScreenState();
 }
 
 function clearPatternTransforms() {
@@ -555,6 +633,7 @@ function playIntroSplashAnimation() {
 
 function resetToLockScreen() {
   isUnlocked = false;
+  resetInteractionState();
   resetTypewriterState();
   resetPattern();
   ensureInteractionOverlaysDismissed();
@@ -594,14 +673,14 @@ function hideNotificationVideo() {
 
     notificationVideo?.pause();
     videoFinishBtn?.classList.add('hidden');
+    if (videoFinishBtn) gsap.set(videoFinishBtn, { pointerEvents: 'none' });
 
     gsap.to(notificationVideoOverlay, {
       opacity: 0,
       duration: 0.6,
       ease: 'power2.in',
       onComplete: () => {
-        notificationVideoOverlay.classList.remove('is-visible');
-        notificationVideoOverlay.classList.add('hidden');
+        resetVideoScreenState();
         bgVideo?.play().catch(() => {});
         resolve();
       },
@@ -612,12 +691,7 @@ function hideNotificationVideo() {
 function showNotificationVideo() {
   if (!notificationVideoOverlay || !notificationVideo) return;
 
-  skipToNotificationBtn?.classList.add('hidden');
-  videoFinishBtn?.classList.remove('hidden');
-
-  notificationVideoOverlay.classList.remove('hidden');
-  notificationVideoOverlay.classList.add('is-visible');
-  gsap.set(notificationVideoOverlay, { opacity: 0 });
+  prepareVideoScreenForShow();
   gsap.to(notificationVideoOverlay, { opacity: 1, duration: 0.85, ease: 'power2.out' });
 
   notificationVideo.currentTime = 0;
@@ -646,8 +720,6 @@ async function runEpilogueNotificationAndReturnToLock(message, displayMs = REFUS
   await playIntroSplashAnimation();
   resetToLockScreen();
 
-  setNotificationButtonsVisible(true);
-  setNotificationButtonsDisabled(false);
 }
 
 async function handleNotificationRefuse() {
@@ -655,32 +727,38 @@ async function handleNotificationRefuse() {
   notificationBusy = true;
   setNotificationButtonsDisabled(true);
 
-  await animateNotificationOut();
-  closeNotificationOverlay();
+  try {
+    await animateNotificationOut();
+    closeNotificationOverlay();
 
-  await new Promise((resolve) => {
-    gsap.delayedCall(0.45, resolve);
-  });
+    await new Promise((resolve) => {
+      gsap.delayedCall(0.45, resolve);
+    });
 
-  await runEpilogueNotificationAndReturnToLock(NOTIFICATION_MESSAGES.thankYou);
-  notificationBusy = false;
+    await runEpilogueNotificationAndReturnToLock(NOTIFICATION_MESSAGES.thankYou);
+  } finally {
+    resetInteractionState();
+  }
 }
 
 async function handleVideoFinish() {
   if (notificationBusy) return;
   notificationBusy = true;
 
-  await hideNotificationVideo();
+  try {
+    await hideNotificationVideo();
 
-  await new Promise((resolve) => {
-    gsap.delayedCall(0.4, resolve);
-  });
+    await new Promise((resolve) => {
+      gsap.delayedCall(0.4, resolve);
+    });
 
-  await runEpilogueNotificationAndReturnToLock(
-    NOTIFICATION_MESSAGES.afterVideo,
-    AFTER_VIDEO_EPILOGUE_DISPLAY_MS,
-  );
-  notificationBusy = false;
+    await runEpilogueNotificationAndReturnToLock(
+      NOTIFICATION_MESSAGES.afterVideo,
+      AFTER_VIDEO_EPILOGUE_DISPLAY_MS,
+    );
+  } finally {
+    resetInteractionState();
+  }
 }
 
 async function handleNotificationAccept() {
@@ -688,15 +766,19 @@ async function handleNotificationAccept() {
   notificationBusy = true;
   setNotificationButtonsDisabled(true);
 
-  await animateNotificationOut();
-  closeNotificationOverlay();
+  try {
+    await animateNotificationOut();
+    closeNotificationOverlay();
 
-  await new Promise((resolve) => {
-    gsap.delayedCall(0.35, resolve);
-  });
+    await new Promise((resolve) => {
+      gsap.delayedCall(0.35, resolve);
+    });
 
-  showNotificationVideo();
-  notificationBusy = false;
+    showNotificationVideo();
+  } finally {
+    notificationBusy = false;
+    setNotificationButtonsDisabled(false);
+  }
 }
 
 function measureNotificationPanelHeight() {
@@ -733,9 +815,8 @@ function showNotification(options = {}) {
   }
 
   if (notificationBody) notificationBody.textContent = message;
-  setNotificationButtonsVisible(showButtons);
 
-  resetNotificationVisualState();
+  prepareNotificationForShow({ showButtons });
   skipToNotificationBtn?.classList.add('hidden');
 
   notificationOverlay.classList.remove('hidden');
@@ -872,16 +953,16 @@ function playTypewriterSentence() {
 
       gsap.to(typewriterText, {
         opacity: 0,
-        duration: 2.2,
+        duration: TIMING.typewriter.fadeOutDuration,
         ease: 'power1.inOut',
-        delay: 1.4,
+        delay: TIMING.typewriter.pauseBeforeFadeOut,
         onComplete: () => {
           if (runId !== typewriterRunId) return;
 
           if (isLastSentence) {
             showCompleteMessage();
           } else {
-            gsap.delayedCall(0.9, () => {
+            gsap.delayedCall(TIMING.typewriter.pauseBetweenSentences, () => {
               if (runId !== typewriterRunId) return;
               playTypewriterSentence();
             });
@@ -893,17 +974,17 @@ function playTypewriterSentence() {
 
   typewriterTimeline
     .set(typewriterText, { opacity: 0 })
-    .to(typewriterText, { opacity: 1, duration: 1.4, ease: 'power2.out' })
+    .to(typewriterText, { opacity: 1, duration: TIMING.typewriter.fadeInDuration, ease: 'power2.out' })
     .to(typingProxy, {
       progress: 1,
-      duration: sentence.length * 0.048,
+      duration: sentence.length * TIMING.typewriter.secondsPerChar,
       ease: 'none',
       onUpdate: () => {
         const count = Math.floor(typingProxy.progress * sentence.length);
         typewriterText.textContent = sentence.slice(0, count);
       },
     }, '-=0.6')
-    .to({}, { duration: 2.8 });
+    .to({}, { duration: TIMING.typewriter.holdAfterTyping });
 }
 
 function startTypewriter() {
