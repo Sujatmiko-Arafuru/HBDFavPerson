@@ -26,6 +26,11 @@ const notificationButtonsWrap = document.querySelector('.notification-buttons');
 const notificationCancel = document.getElementById('notificationCancel');
 const notificationContinue = document.getElementById('notificationContinue');
 const notificationSound = document.getElementById('notificationSound');
+const backgroundMusic = document.getElementById('backgroundMusic');
+const audioControls = document.getElementById('audioControls');
+const audioControlsPanel = document.getElementById('audioControlsPanel');
+const audioControlsToggle = document.getElementById('audioControlsToggle');
+const audioVolumeSlider = document.getElementById('audioVolumeSlider');
 const notificationVideoOverlay = document.getElementById('notificationVideoOverlay');
 const notificationVideo = document.getElementById('notificationVideo');
 const videoFinishBtn = document.getElementById('videoFinishBtn');
@@ -41,6 +46,7 @@ const notificationParticles = notificationBox
 let notificationGlowTween = null;
 let notificationEntranceTimeline = null;
 let notificationBusy = false;
+let backgroundMusicSessionEnded = false;
 
 const NOTIFICATION_MESSAGES = {
   primary: 'Angelio Asa Triatmaja has sent a live birthday message, and you can watch it. Would you like to open it?',
@@ -57,6 +63,11 @@ const TIMING = {
   epilogueThankYouMs: 4500,
   /** Lama notifikasi epilog setelah Finish video (ms) */
   epilogueAfterVideoMs: 8500,
+
+  backgroundMusic: {
+    /** Volume awal musik latar (0 = bisu, 1 = penuh) */
+    defaultVolume: 0.7,
+  },
 
   typewriter: {
     /** Detik per karakter saat mengetik (lebih kecil = lebih cepat) */
@@ -76,6 +87,7 @@ const TIMING = {
 
 const REFUSE_THANKYOU_DISPLAY_MS = TIMING.epilogueThankYouMs;
 const AFTER_VIDEO_EPILOGUE_DISPLAY_MS = TIMING.epilogueAfterVideoMs;
+let savedBackgroundVolume = TIMING.backgroundMusic.defaultVolume;
 
 const TYPEWRITER_SENTENCES = [
   'Kalau pesan ini sampai ke kamu makasih ya buat siapapun yang nerusin!',
@@ -91,7 +103,7 @@ const TYPEWRITER_SENTENCES = [
   'From the worst person you have ever known... "Angelio Asa Triatmaja"',
 ];
 
-const dots = [...patternGrid.querySelectorAll('.dot')];
+const dots = patternGrid ? [...patternGrid.querySelectorAll('.dot')] : [];
 
 let typewriterTimeline = null;
 let sentenceIndex = 0;
@@ -407,6 +419,122 @@ function resetInteractionState() {
   notificationBusy = false;
   setNotificationButtonsDisabled(false);
   if (videoFinishBtn) videoFinishBtn.disabled = false;
+  resetAudioControlsInteractionState();
+}
+
+function resetAudioControlsInteractionState() {
+  if (audioControlsToggle) audioControlsToggle.disabled = false;
+  if (audioVolumeSlider) audioVolumeSlider.disabled = false;
+}
+
+function applyBackgroundMusicVolume(volume01) {
+  const clamped = Math.min(1, Math.max(0, volume01));
+  savedBackgroundVolume = clamped;
+  if (backgroundMusic) backgroundMusic.volume = clamped;
+  if (audioVolumeSlider) {
+    const percent = Math.round(clamped * 100);
+    audioVolumeSlider.value = String(percent);
+    audioVolumeSlider.setAttribute('aria-valuenow', String(percent));
+  }
+}
+
+function prepareAudioControlsForShow() {
+  if (!audioControls) return;
+
+  gsap.killTweensOf(audioControls);
+  if (audioControlsPanel) gsap.killTweensOf(audioControlsPanel);
+
+  audioControls.classList.remove('hidden');
+  gsap.set(audioControls, { opacity: 1, pointerEvents: 'auto' });
+
+  resetAudioControlsInteractionState();
+  if (audioControlsToggle) {
+    audioControlsToggle.setAttribute('aria-expanded', 'false');
+  }
+  audioControlsPanel?.classList.add('hidden');
+}
+
+function hideAudioControlsUI() {
+  if (audioControlsToggle) {
+    audioControlsToggle.setAttribute('aria-expanded', 'false');
+  }
+  audioControlsPanel?.classList.add('hidden');
+
+  if (!audioControls) return;
+
+  gsap.killTweensOf(audioControls);
+  audioControls.classList.add('hidden');
+  gsap.set(audioControls, { opacity: 0, pointerEvents: 'none' });
+}
+
+function resetAudioControlsState() {
+  if (backgroundMusic) {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.loop = false;
+  }
+  hideAudioControlsUI();
+}
+
+function startBackgroundMusic() {
+  if (!backgroundMusic || backgroundMusicSessionEnded) return;
+
+  prepareAudioControlsForShow();
+  applyBackgroundMusicVolume(savedBackgroundVolume);
+
+  backgroundMusic.loop = false;
+  backgroundMusic.currentTime = 0;
+
+  const playPromise = backgroundMusic.play();
+  if (playPromise?.catch) {
+    playPromise.catch(() => {});
+  }
+}
+
+function endBackgroundMusicSession() {
+  backgroundMusicSessionEnded = true;
+  resetAudioControlsState();
+}
+
+function setAudioControlsPanelOpen(open) {
+  if (!audioControlsPanel || !audioControlsToggle) return;
+
+  audioControlsPanel.classList.toggle('hidden', !open);
+  audioControlsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function initBackgroundAudio() {
+  if (backgroundMusic) {
+    backgroundMusic.loop = false;
+    applyBackgroundMusicVolume(TIMING.backgroundMusic.defaultVolume);
+    backgroundMusic.addEventListener('ended', () => {
+      backgroundMusic.pause();
+    });
+  }
+
+  if (audioVolumeSlider) {
+    audioVolumeSlider.addEventListener('input', () => {
+      applyBackgroundMusicVolume(Number(audioVolumeSlider.value) / 100);
+    });
+  }
+
+  if (audioControlsToggle) {
+    audioControlsToggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (audioControls?.classList.contains('hidden')) return;
+      const willOpen = audioControlsPanel?.classList.contains('hidden');
+      setAudioControlsPanelOpen(Boolean(willOpen));
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!audioControls || audioControls.classList.contains('hidden')) return;
+    if (audioControlsPanel?.classList.contains('hidden')) return;
+    if (audioControls.contains(event.target)) return;
+    setAudioControlsPanelOpen(false);
+  });
+
+  resetAudioControlsState();
 }
 
 function resetVideoScreenState() {
@@ -544,6 +672,7 @@ function ensureInteractionOverlaysDismissed() {
   }
 
   resetVideoScreenState();
+  resetAudioControlsState();
 }
 
 function clearPatternTransforms() {
@@ -633,6 +762,7 @@ function playIntroSplashAnimation() {
 
 function resetToLockScreen() {
   isUnlocked = false;
+  backgroundMusicSessionEnded = false;
   resetInteractionState();
   resetTypewriterState();
   resetPattern();
@@ -726,6 +856,7 @@ async function handleNotificationRefuse() {
   if (notificationBusy) return;
   notificationBusy = true;
   setNotificationButtonsDisabled(true);
+  endBackgroundMusicSession();
 
   try {
     await animateNotificationOut();
@@ -765,6 +896,7 @@ async function handleNotificationAccept() {
   if (notificationBusy) return;
   notificationBusy = true;
   setNotificationButtonsDisabled(true);
+  endBackgroundMusicSession();
 
   try {
     await animateNotificationOut();
@@ -1201,6 +1333,7 @@ function showMessageWithTransition() {
 
 function triggerPatternSuccess() {
   isUnlocked = true;
+  backgroundMusicSessionEnded = false;
   patternState = 'success';
   isDrawing = false;
   pointerPos = null;
@@ -1209,6 +1342,8 @@ function triggerPatternSuccess() {
   dots.filter((dot) => dot.classList.contains('active')).forEach((dot) => {
     dot.classList.add('success');
   });
+
+  startBackgroundMusic();
 
   gsap.to('.dot.active', {
     scale: 1.15,
@@ -1371,6 +1506,7 @@ function init() {
   resizeCanvas();
   installPatternResizeObserver();
   initBackgroundVideo();
+  initBackgroundAudio();
   initNotification();
 }
 
