@@ -450,32 +450,37 @@ body:has(.container.is-message-complete) {
   }
 
   body:has(.container.is-unlocked):not(:has(.container.is-message-complete)) {
-    overflow: auto;
+    overflow: hidden;
   }
 
   .container {
     flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
+    max-width: 100%;
+    margin: 0;
     padding:
       max(18px, env(safe-area-inset-top, 0px))
       max(18px, env(safe-area-inset-right, 0px))
       max(18px, env(safe-area-inset-bottom, 0px))
       max(18px, env(safe-area-inset-left, 0px));
-    justify-content: flex-start;
-    align-items: stretch;
+    justify-content: center;
+    align-items: center;
     gap: clamp(20px, 4vh, 32px);
   }
 
   .container.is-unlocked {
-    justify-content: flex-start;
-    align-items: stretch;
+    justify-content: center;
+    align-items: center;
     min-height: 100vh;
     min-height: 100dvh;
-    padding-top: max(18px, env(safe-area-inset-top, 0px));
-    padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
-    padding-left: max(18px, env(safe-area-inset-left, 0px));
-    padding-right: max(18px, env(safe-area-inset-right, 0px));
+    max-width: 100%;
+    margin: 0;
+    padding:
+      max(18px, env(safe-area-inset-top, 0px))
+      max(18px, env(safe-area-inset-right, 0px))
+      max(18px, env(safe-area-inset-bottom, 0px))
+      max(18px, env(safe-area-inset-left, 0px));
   }
 
   .typewriter-panel:not(.hidden) {
@@ -489,8 +494,8 @@ body:has(.container.is-message-complete) {
   }
 
   .typewriter-panel {
-    flex: 1 1 auto;
-    max-width: 100%;
+    flex: 0 1 auto;
+    max-width: min(620px, 100%);
     width: 100%;
     padding: 0;
     margin: 0;
@@ -515,14 +520,15 @@ body:has(.container.is-message-complete) {
   }
 
   .card {
-    width: 100%;
-    max-width: 100%;
+    width: min(460px, 92vw);
+    max-width: 92vw;
     padding: 22px;
     margin: 0;
   }
 
   .lock-card {
-    align-self: stretch;
+    align-self: center;
+    flex-shrink: 0;
   }
 }
 
@@ -1139,8 +1145,12 @@ body:has(.container.is-message-complete) {
 }
 
 .notification-video {
+  display: block;
   width: min(960px, 94vw);
-  max-height: min(88vh, 900px);
+  aspect-ratio: 16 / 9;
+  height: auto;
+  max-height: min(88vh, calc(94vw * 9 / 16));
+  object-fit: contain;
   border-radius: 4px;
   border: 1px solid rgba(0, 229, 255, 0.35);
   box-shadow:
@@ -1161,8 +1171,8 @@ body:has(.container.is-message-complete) {
 
 @media (max-width: 768px) {
   .notification-overlay {
-    align-items: stretch;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
     overflow-y: auto;
     padding:
       max(12px, env(safe-area-inset-top, 0px))
@@ -1172,52 +1182,57 @@ body:has(.container.is-message-complete) {
   }
 
   .notification-reveal {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
+    width: min(380px, 88vw);
+    max-width: 88vw;
+    margin: auto;
     flex: 0 0 auto;
   }
 
   .notification-box {
-    padding: clamp(22px, 5vw, 32px) clamp(16px, 4vw, 24px);
-    text-align: left;
+    padding: clamp(20px, 4.5vw, 28px) clamp(14px, 3.5vw, 20px);
+    text-align: center;
   }
 
   .notification-header {
     flex-wrap: wrap;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 10px;
-    margin-bottom: clamp(16px, 2.5vh, 24px);
+    margin-bottom: clamp(14px, 2.5vh, 22px);
   }
 
   .notification-title {
-    font-size: clamp(1.15rem, 4.5vw, 1.45rem);
+    font-size: clamp(1.05rem, 4vw, 1.35rem);
     letter-spacing: 0.08em;
   }
 
   .notification-body {
-    font-size: clamp(0.88rem, 3.6vw, 1rem);
-    line-height: 1.6;
-    margin-bottom: clamp(20px, 3vh, 28px);
-    text-align: left;
+    font-size: clamp(0.82rem, 3.2vw, 0.95rem);
+    line-height: 1.55;
+    margin-bottom: clamp(18px, 2.5vh, 24px);
+    text-align: center;
   }
 
   .notification-buttons {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: stretch;
-    justify-content: flex-start;
-    gap: 12px;
+    justify-content: center;
+    gap: 10px;
     width: 100%;
   }
 
   .notification-btn {
-    width: 100%;
+    flex: 1 1 0;
     min-width: 0;
+    width: auto;
+    padding: 10px 8px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
   }
 
   .notification-video-overlay {
-    align-items: stretch;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
     overflow-y: auto;
     padding:
       max(56px, calc(env(safe-area-inset-top, 0px) + 44px))
@@ -1227,10 +1242,14 @@ body:has(.container.is-message-complete) {
   }
 
   .notification-video {
-    width: 100%;
-    max-width: 100%;
-    max-height: none;
-    border-radius: 4px;
+    width: min(94vw, 960px);
+    aspect-ratio: 16 / 9;
+    height: auto;
+    max-height: min(
+      calc(94vw * 9 / 16),
+      calc(100dvh - max(72px, env(safe-area-inset-top, 0px) + 56px))
+    );
+    object-fit: contain;
   }
 
   .skip-btn,
@@ -1241,13 +1260,14 @@ body:has(.container.is-message-complete) {
 }
 
 @media (max-width: 520px) {
-  .notification-buttons {
-    flex-direction: column;
-    align-items: stretch;
+  .notification-reveal {
+    width: min(340px, 90vw);
   }
 
   .notification-btn {
-    width: 100%;
+    font-size: 0.62rem;
+    padding: 9px 6px;
+    letter-spacing: 0.06em;
   }
 }
 

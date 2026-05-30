@@ -71,7 +71,7 @@ let typewriterTimeline = null;
 let sentenceIndex = 0;
 let typewriterRunId = 0;
 
-const correctPattern = ['1', '2', '3', '4'];
+const correctPattern = ['1', '8', '5', '3'];
 let currentPattern = [];
 let isDrawing = false;
 let pointerPos = null;
