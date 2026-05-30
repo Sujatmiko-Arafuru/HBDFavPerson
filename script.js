@@ -435,8 +435,57 @@ function hideIntroSplash() {
   if (!introSplash) return;
 
   gsap.killTweensOf([introSplash, introSplashContent]);
-  gsap.set(introSplash, { opacity: 0, display: 'none' });
+  introSplash.classList.add('is-dismissed');
+  introSplash.setAttribute('aria-hidden', 'true');
+  gsap.set(introSplash, { opacity: 0, display: 'none', pointerEvents: 'none' });
   gsap.set(introSplashContent, { opacity: 0, y: 0 });
+}
+
+function showIntroSplash() {
+  if (!introSplash) return;
+
+  introSplash.classList.remove('is-dismissed');
+  introSplash.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('intro-active');
+  gsap.set(introSplash, { display: 'flex', opacity: 1, pointerEvents: 'auto' });
+}
+
+function ensureInteractionOverlaysDismissed() {
+  hideIntroSplash();
+
+  if (notificationOverlay) {
+    notificationOverlay.classList.remove('is-visible');
+    notificationOverlay.classList.add('hidden');
+    gsap.set(notificationOverlay, { opacity: 0, pointerEvents: 'none' });
+  }
+
+  if (notificationVideoOverlay) {
+    notificationVideoOverlay.classList.remove('is-visible');
+    notificationVideoOverlay.classList.add('hidden');
+    gsap.set(notificationVideoOverlay, { opacity: 0, pointerEvents: 'none' });
+  }
+
+  videoFinishBtn?.classList.add('hidden');
+}
+
+function refreshPatternLockLayout() {
+  frameRectCache = null;
+  isDrawing = false;
+  activePointerId = null;
+  pointerPos = null;
+  isAnimatingError = false;
+
+  const refresh = () => {
+    if (!patternFrame || lockCard?.classList.contains('hidden')) return;
+    resizeCanvas();
+  };
+
+  refresh();
+  requestAnimationFrame(() => {
+    refresh();
+    requestAnimationFrame(refresh);
+  });
+  window.setTimeout(refresh, 120);
 }
 
 function playIntroSplashAnimation() {
@@ -446,8 +495,7 @@ function playIntroSplashAnimation() {
       return;
     }
 
-    document.body.classList.add('intro-active');
-    gsap.set(introSplash, { display: 'flex', opacity: 1 });
+    showIntroSplash();
     gsap.set(introSplashContent, { opacity: 0, y: 14 });
 
     const tl = gsap.timeline({
@@ -482,7 +530,7 @@ function resetToLockScreen() {
   isUnlocked = false;
   resetTypewriterState();
   resetPattern();
-  hideIntroSplash();
+  ensureInteractionOverlaysDismissed();
 
   if (notificationBody) notificationBody.textContent = NOTIFICATION_MESSAGES.primary;
   setNotificationButtonsVisible(true);
@@ -492,7 +540,7 @@ function resetToLockScreen() {
   mainContainer?.classList.remove('hidden');
   mainContainer?.classList.remove('is-unlocked', 'is-message-complete');
 
-  gsap.set(mainContainer, { opacity: 1, clearProps: 'padding' });
+  gsap.set(mainContainer, { opacity: 1, pointerEvents: 'auto', clearProps: 'padding' });
   gsap.set(lockCard, {
     opacity: 1,
     scale: 1,
@@ -501,9 +549,12 @@ function resetToLockScreen() {
     pointerEvents: 'auto',
     clearProps: 'transform',
   });
-  gsap.set(typewriterPanel, { opacity: 0, x: 0, clearProps: 'transform' });
+  gsap.set(typewriterPanel, { opacity: 0, x: 0, pointerEvents: 'none', clearProps: 'transform' });
+  gsap.set(patternFrame, { pointerEvents: 'auto' });
+  gsap.set(patternGrid, { pointerEvents: 'auto' });
 
   skipToNotificationBtn?.classList.add('hidden');
+  refreshPatternLockLayout();
 }
 
 function hideNotificationVideo() {
@@ -935,14 +986,43 @@ function schedulePatternRedraw() {
 }
 
 function resetPattern() {
+  detachPatternDrawListeners();
   currentPattern = [];
   isDrawing = false;
   pointerPos = null;
+  activePointerId = null;
   patternState = 'drawing';
   dots.forEach((dot) => {
     dot.classList.remove('active', 'success', 'error');
   });
   drawPattern();
+}
+
+function handlePatternPointerMove(event) {
+  if (!isDrawing || event.pointerId !== activePointerId) return;
+  event.preventDefault();
+  updatePointerPosition(event);
+  const { x, y } = getPointerCoords(event);
+  const dot = getDotFromCoords(x, y);
+  if (dot) addDot(dot);
+  schedulePatternRedraw();
+}
+
+function handlePatternPointerEnd(event) {
+  if (!isDrawing || (activePointerId !== null && event.pointerId !== activePointerId)) return;
+  endDrawing(event);
+}
+
+function attachPatternDrawListeners() {
+  document.addEventListener('pointermove', handlePatternPointerMove, { passive: false });
+  document.addEventListener('pointerup', handlePatternPointerEnd);
+  document.addEventListener('pointercancel', handlePatternPointerEnd);
+}
+
+function detachPatternDrawListeners() {
+  document.removeEventListener('pointermove', handlePatternPointerMove);
+  document.removeEventListener('pointerup', handlePatternPointerEnd);
+  document.removeEventListener('pointercancel', handlePatternPointerEnd);
 }
 
 function releasePointerCapture(event) {
@@ -976,6 +1056,7 @@ function updatePointerPosition(event) {
 
 function endDrawing(event) {
   if (!isDrawing) return;
+  detachPatternDrawListeners();
   releasePointerCapture(event);
   isDrawing = false;
   pointerPos = null;
@@ -1102,41 +1183,20 @@ patternGrid.addEventListener('pointerdown', (event) => {
   try {
     patternGrid.setPointerCapture(event.pointerId);
   } catch (_) {
-    // capture not supported; window listeners still work
+    // capture not supported; document listeners still work
   }
 
+  attachPatternDrawListeners();
   addDot(dot);
 });
 
-patternGrid.addEventListener('pointermove', (event) => {
-  if (!isDrawing || event.pointerId !== activePointerId) return;
-  event.preventDefault();
-  updatePointerPosition(event);
-  const { x, y } = getPointerCoords(event);
-  const dot = getDotFromCoords(x, y);
-  if (dot) addDot(dot);
-  schedulePatternRedraw();
-});
+patternGrid.addEventListener('pointermove', handlePatternPointerMove);
 
-patternGrid.addEventListener('pointerup', (event) => {
-  if (!isDrawing || (activePointerId !== null && event.pointerId !== activePointerId)) return;
-  endDrawing(event);
-});
+patternGrid.addEventListener('pointerup', handlePatternPointerEnd);
 
 patternGrid.addEventListener('pointercancel', (event) => {
   if (!isDrawing || (activePointerId !== null && event.pointerId !== activePointerId)) return;
-  releasePointerCapture(event);
-  isDrawing = false;
-  resetPattern();
-});
-
-window.addEventListener('pointerup', (event) => {
-  if (!isDrawing || activePointerId === null || event.pointerId !== activePointerId) return;
-  endDrawing(event);
-});
-
-window.addEventListener('pointercancel', (event) => {
-  if (!isDrawing || activePointerId === null || event.pointerId !== activePointerId) return;
+  detachPatternDrawListeners();
   releasePointerCapture(event);
   isDrawing = false;
   resetPattern();
@@ -1198,6 +1258,7 @@ function init() {
 async function boot() {
   await runIntroSplash();
   init();
+  refreshPatternLockLayout();
 }
 
 if (document.readyState === 'loading') {

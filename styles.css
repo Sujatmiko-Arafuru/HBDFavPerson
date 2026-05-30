@@ -46,6 +46,12 @@ body.intro-active {
   padding: max(20px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
 }
 
+.intro-splash.is-dismissed {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
 .intro-splash-content {
   display: flex;
   flex-direction: column;
