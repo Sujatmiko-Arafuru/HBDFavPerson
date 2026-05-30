@@ -450,7 +450,7 @@ body:has(.container.is-message-complete) {
   }
 
   body:has(.container.is-unlocked):not(:has(.container.is-message-complete)) {
-    overflow: hidden;
+    overflow: auto;
   }
 
   .container {
@@ -462,13 +462,14 @@ body:has(.container.is-message-complete) {
       max(18px, env(safe-area-inset-right, 0px))
       max(18px, env(safe-area-inset-bottom, 0px))
       max(18px, env(safe-area-inset-left, 0px));
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: clamp(20px, 4vh, 32px);
   }
 
   .container.is-unlocked {
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: stretch;
     min-height: 100vh;
     min-height: 100dvh;
     padding-top: max(18px, env(safe-area-inset-top, 0px));
@@ -478,21 +479,21 @@ body:has(.container.is-message-complete) {
   }
 
   .typewriter-panel:not(.hidden) {
-    margin: 0 auto;
-    text-align: center;
+    margin: 0;
+    text-align: left;
   }
 
   .typewriter-line {
-    text-align: center;
+    text-align: left;
     font-size: clamp(1.45rem, 5.5vw, 2rem);
   }
 
   .typewriter-panel {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     max-width: 100%;
     width: 100%;
     padding: 0;
-    margin: 0 auto;
+    margin: 0;
   }
 
   .typewriter-panel.is-complete {
@@ -514,8 +515,14 @@ body:has(.container.is-message-complete) {
   }
 
   .card {
-    width: min(92vw, 100%);
+    width: 100%;
+    max-width: 100%;
     padding: 22px;
+    margin: 0;
+  }
+
+  .lock-card {
+    align-self: stretch;
   }
 }
 
@@ -1154,6 +1161,9 @@ body:has(.container.is-message-complete) {
 
 @media (max-width: 768px) {
   .notification-overlay {
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow-y: auto;
     padding:
       max(12px, env(safe-area-inset-top, 0px))
       max(12px, env(safe-area-inset-right, 0px))
@@ -1162,16 +1172,20 @@ body:has(.container.is-message-complete) {
   }
 
   .notification-reveal {
-    width: min(720px, 92vw);
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    flex: 0 0 auto;
   }
 
   .notification-box {
     padding: clamp(22px, 5vw, 32px) clamp(16px, 4vw, 24px);
+    text-align: left;
   }
 
   .notification-header {
     flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 10px;
     margin-bottom: clamp(16px, 2.5vh, 24px);
   }
@@ -1185,11 +1199,13 @@ body:has(.container.is-message-complete) {
     font-size: clamp(0.88rem, 3.6vw, 1rem);
     line-height: 1.6;
     margin-bottom: clamp(20px, 3vh, 28px);
+    text-align: left;
   }
 
   .notification-buttons {
     flex-direction: column;
     align-items: stretch;
+    justify-content: flex-start;
     gap: 12px;
     width: 100%;
   }
@@ -1199,9 +1215,22 @@ body:has(.container.is-message-complete) {
     min-width: 0;
   }
 
+  .notification-video-overlay {
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding:
+      max(56px, calc(env(safe-area-inset-top, 0px) + 44px))
+      max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px));
+  }
+
   .notification-video {
-    width: min(960px, 96vw);
-    max-height: min(72vh, 720px);
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    border-radius: 4px;
   }
 
   .skip-btn,
