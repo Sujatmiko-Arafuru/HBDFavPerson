@@ -11,7 +11,6 @@ const messageComplete = document.getElementById('messageComplete');
 const messageParagraph = document.getElementById('messageParagraph');
 const lockCard = document.querySelector('.lock-card');
 const bgVideo = document.querySelector('.bg-video');
-const skipToNotificationBtn = document.getElementById('skipToNotification');
 const notificationOverlay = document.getElementById('notificationOverlay');
 const notificationReveal = document.getElementById('notificationReveal');
 const notificationBarTop = document.getElementById('notificationBarTop');
@@ -562,8 +561,6 @@ function prepareVideoScreenForShow() {
   gsap.killTweensOf(notificationVideoOverlay);
   if (videoFinishBtn) gsap.killTweensOf(videoFinishBtn);
 
-  skipToNotificationBtn?.classList.add('hidden');
-
   notificationVideoOverlay.classList.remove('hidden');
   notificationVideoOverlay.classList.add('is-visible');
   gsap.set(notificationVideoOverlay, { opacity: 0, pointerEvents: 'auto' });
@@ -790,7 +787,6 @@ function resetToLockScreen() {
   gsap.set(patternGrid, { pointerEvents: 'auto' });
   clearPatternTransforms();
 
-  skipToNotificationBtn?.classList.add('hidden');
   refreshPatternLockLayout();
 }
 
@@ -920,21 +916,6 @@ function measureNotificationPanelHeight() {
   return panelHeight;
 }
 
-function skipToNotification() {
-  isUnlocked = true;
-  resetTypewriterState();
-  disableConfetti();
-
-  gsap.killTweensOf([lockCard, typewriterPanel, mainContainer]);
-  lockCard.classList.add('hidden');
-  typewriterPanel.classList.add('hidden');
-  mainContainer.classList.add('hidden');
-  gsap.set([lockCard, typewriterPanel, mainContainer], { opacity: 0 });
-
-  skipToNotificationBtn?.classList.add('hidden');
-  showNotification();
-}
-
 function showNotification(options = {}) {
   const {
     message = NOTIFICATION_MESSAGES.primary,
@@ -949,7 +930,6 @@ function showNotification(options = {}) {
   if (notificationBody) notificationBody.textContent = message;
 
   prepareNotificationForShow({ showButtons });
-  skipToNotificationBtn?.classList.add('hidden');
 
   notificationOverlay.classList.remove('hidden');
   notificationOverlay.classList.add('is-visible');
@@ -1305,7 +1285,6 @@ function showMessageWithTransition() {
   // user requested: no particle/confetti effects after correct pattern
   disableConfetti();
 
-  skipToNotificationBtn?.classList.remove('hidden');
   mainContainer.classList.add('is-unlocked');
   typewriterPanel.classList.remove('hidden');
   gsap.set(typewriterPanel, { opacity: 0, x: -40 });
@@ -1478,9 +1457,6 @@ function initBackgroundVideo() {
 }
 
 function initNotification() {
-  if (skipToNotificationBtn) {
-    skipToNotificationBtn.addEventListener('click', skipToNotification);
-  }
   if (notificationCancel) {
     notificationCancel.addEventListener('click', handleNotificationRefuse);
   }
