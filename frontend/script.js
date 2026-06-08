@@ -1502,6 +1502,50 @@ function runIntroSplash() {
   return playIntroSplashAnimation();
 }
 
+function initVisibilityChangeHandler() {
+  let wasMusicPlaying = false;
+  let wasVideoPlaying = false;
+  let wasNotificationVideoPlaying = false;
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // Tab minimized/hidden
+      if (isUnlocked && backgroundMusic && !backgroundMusic.paused) {
+        backgroundMusic.pause();
+        wasMusicPlaying = true;
+      }
+      if (typewriterTimeline) {
+        typewriterTimeline.pause();
+      }
+      if (bgVideo && !bgVideo.paused) {
+        bgVideo.pause();
+        wasVideoPlaying = true;
+      }
+      if (notificationVideo && !notificationVideo.paused) {
+        notificationVideo.pause();
+        wasNotificationVideoPlaying = true;
+      }
+    } else {
+      // Tab restored/visible
+      if (isUnlocked && backgroundMusic && wasMusicPlaying) {
+        backgroundMusic.play().catch(() => {});
+        wasMusicPlaying = false;
+      }
+      if (typewriterTimeline) {
+        typewriterTimeline.resume();
+      }
+      if (bgVideo && wasVideoPlaying) {
+        bgVideo.play().catch(() => {});
+        wasVideoPlaying = false;
+      }
+      if (notificationVideo && wasNotificationVideoPlaying) {
+        notificationVideo.play().catch(() => {});
+        wasNotificationVideoPlaying = false;
+      }
+    }
+  });
+}
+
 function init() {
   resizeConfettiCanvas();
   resizeCanvas();
@@ -1509,6 +1553,7 @@ function init() {
   initBackgroundVideo();
   initBackgroundAudio();
   initNotification();
+  initVisibilityChangeHandler();
 }
 
 async function boot() {
