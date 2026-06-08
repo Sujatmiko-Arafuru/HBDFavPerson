@@ -74,7 +74,7 @@
         <div class="message-complete hidden" id="messageComplete">
           <p class="message-paragraph" id="messageParagraph"></p>
           <figure class="message-photo">
-            <img src="foto/Jesus.png" alt="" width="480" height="640" loading="lazy" decoding="async">
+            <img id="messagePhoto" alt="" width="480" height="640" loading="lazy" decoding="async">
           </figure>
         </div>
       </aside>
@@ -124,13 +124,11 @@
     <button type="button" class="video-finish-btn hidden" id="videoFinishBtn" aria-label="Selesai menonton">Finish</button>
 
     <div class="notification-video-overlay hidden" id="notificationVideoOverlay">
-      <video class="notification-video" id="notificationVideo" playsinline controls preload="metadata">
-        <source src="Notification Media/System Vid.mp4" type="video/mp4">
-      </video>
+      <video class="notification-video" id="notificationVideo" playsinline controls preload="metadata"></video>
     </div>
 
     <audio id="notificationSound" class="notification-sound" preload="auto" src="Notification Media/System Sound.mp3"></audio>
-    <audio id="backgroundMusic" class="background-music" preload="auto" loop="false" src="Audio Background/Yorushika Liar.mp3"></audio>
+    <audio id="backgroundMusic" class="background-music" preload="auto" loop="false"></audio>
 
     <div class="audio-controls hidden" id="audioControls">
       <div class="audio-controls-panel hidden" id="audioControlsPanel">

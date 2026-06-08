@@ -88,19 +88,7 @@ const REFUSE_THANKYOU_DISPLAY_MS = TIMING.epilogueThankYouMs;
 const AFTER_VIDEO_EPILOGUE_DISPLAY_MS = TIMING.epilogueAfterVideoMs;
 let savedBackgroundVolume = TIMING.backgroundMusic.defaultVolume;
 
-const TYPEWRITER_SENTENCES = [
-  'Kalau pesan ini sampai ke kamu makasih ya buat siapapun yang nerusin!',
-  'Hallo Oin ^_^, lama ngga ketemu...',
-  'Selamat ulang tahun yaa Oin. Udah 21 nihhh wkwkwkwk. Tapi bentar jangan tutup dulu...',
-  'Dari kecil sampai kuliah, kita pernah jalan bareng di satu cerita sek panjang walaupun endingnya ytta wkwk.',
-  'Kesalahan semuanya memang di aku, aku juga menyesal dan berproses untuk kembali ke Tuhan yang tentunya bakal duowo perjalanan e.',
-  'Aku itu domba hilang tapi aku juga bakal ngingatin domba hilang lainnya, kalau Yesus itu gembala yang setia.',
-  '"Seperti pelangi setelah hujan, kiranya hidupmu penuh warna kasih dan pengharapan."',
-  'Aku selalu di ingatin Pastorku (PS Sam) kalau kasih Kristus itu lebih besar dari segala luka, dan Ia akan selalu menjagamu.',
-  'Happy Birthday, my first and my last love ^^',
-  'Btw aku juga ada diary di X sek cmn kamu yang bisa liat kalau mau... walaupun aku ragu wkwkw... HBD!!!!!',
-  'From the worst person you have ever known... "Angelio Asa Triatmaja"',
-];
+let TYPEWRITER_SENTENCES = [];
 
 const dots = patternGrid ? [...patternGrid.querySelectorAll('.dot')] : [];
 
@@ -108,7 +96,6 @@ let typewriterTimeline = null;
 let sentenceIndex = 0;
 let typewriterRunId = 0;
 
-const correctPattern = ['1', '8', '5', '3'];
 let currentPattern = [];
 let isDrawing = false;
 let pointerPos = null;
@@ -1368,18 +1355,56 @@ function triggerPatternError() {
   );
 }
 
-function handlePatternEnd() {
+async function handlePatternEnd() {
   if (!currentPattern.length) return;
 
-  if (currentPattern.length !== correctPattern.length) {
-    triggerPatternError();
-    return;
-  }
+  try {
+    const response = await fetch('/api/validate-pattern', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ pattern: currentPattern }),
+    });
 
-  const isMatch = currentPattern.every((value, index) => value === correctPattern[index]);
-  if (isMatch) {
-    triggerPatternSuccess();
-  } else {
+    if (!response.ok) {
+      triggerPatternError();
+      return;
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      TYPEWRITER_SENTENCES = data.sentences;
+
+      if (data.assets) {
+        const messagePhoto = document.getElementById('messagePhoto');
+        if (messagePhoto) {
+          messagePhoto.src = data.assets.photoUrl;
+        }
+
+        const notificationVideo = document.getElementById('notificationVideo');
+        if (notificationVideo) {
+          notificationVideo.innerHTML = '';
+          const source = document.createElement('source');
+          source.src = data.assets.videoUrl;
+          source.type = 'video/mp4';
+          notificationVideo.appendChild(source);
+          notificationVideo.load();
+        }
+
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        if (backgroundMusic) {
+          backgroundMusic.src = data.assets.audioUrl;
+          backgroundMusic.load();
+        }
+      }
+
+      triggerPatternSuccess();
+    } else {
+      triggerPatternError();
+    }
+  } catch (error) {
+    console.error('Validation error:', error);
     triggerPatternError();
   }
 }
